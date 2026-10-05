@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paperless - Document Management</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <header class="workspace-header">
+        <div class="container shell-bar">
+            <div class="brand-cluster">
+                <div class="brand-mark">P</div>
+                <div class="brand-copy">
+                    <span class="eyebrow">workspace</span>
+                    <strong>Paperless</strong>
+                </div>
+            </div>
+
+            <nav class="nav-pills" aria-label="Main navigation">
+                <a href="index.html" class="active">Overview</a>
+                <a href="pages/upload.html">Upload</a>
+                <a href="pages/documents.html">Documents</a>
+                <a href="pages/collections.html">Collections</a>
+            </nav>
+
+            <div class="top-actions">
+                <button class="status-pill" type="button"><span class="status-dot"></span>Ready</button>
+                <a href="pages/upload.html" class="mini-cta">New Doc</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <section class="hero-panel">
+                <div class="hero-content">
+                    <div class="hero-kicker">Document flow</div>
+                    <h2>Keep every file moving.</h2>
+                    <p>Track, organize and review your documents in one focused workspace built for speed.</p>
+                    <div class="hero-actions">
+                        <a href="pages/upload.html" class="btn btn-primary">Upload file</a>
+                        <a href="pages/documents.html" class="btn btn-secondary">Browse library</a>
+                    </div>
+                </div>
+
+                <div class="hero-metrics">
+                    <div class="metric-box">
+                        <span class="metric-pill">active</span>
+                        <div>
+                            <strong id="docCount">0</strong>
+                            <span>documents</span>
+                        </div>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-pill">saved</span>
+                        <div>
+                            <strong id="collCount">0</strong>
+                            <span>collections</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="section">
+                <h2>Recent activity</h2>
+                <div id="recentDocs" class="grid">
+                    <div class="empty-state">
+                        <h3>No documents yet</h3>
+                        <p>Start by <a href="pages/upload.html">uploading</a> a document.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api-client.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -5,6 +5,7 @@ public class Document
     public Guid Id { get; set; }
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = "application/pdf";
+    public string StoragePath { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateTime UploadedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }

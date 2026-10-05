@@ -14,6 +14,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - paperless-network
 
   api:
     build:
@@ -22,11 +24,37 @@ services:
     environment:
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=paperless;Username=paperless;Password=paperless
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - paperless-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: paperless-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - paperless-network
+    environment:
+      - API_URL=http://api:8080/api
 
 volumes:
   postgres_data:
+
+networks:
+  paperless-network:
+    driver: bridge

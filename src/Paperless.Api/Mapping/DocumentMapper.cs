@@ -9,6 +9,7 @@ public static class DocumentMapper
         document.Id,
         document.FileName,
         document.ContentType,
+        document.StoragePath,
         document.Description,
         document.UploadedAtUtc,
         document.UpdatedAtUtc,

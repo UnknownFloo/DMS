@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PDF Preview</title>
+  <style>
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Arial}
+    .viewer-shell{display:flex;flex-direction:column;height:100%;background:#f3f3f3}
+    .viewer-toolbar{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(0,0,0,0.06);background:#fff}
+    .viewer-canvas-wrap{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px}
+    canvas{max-width:100%;height:auto;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
+    .btn{padding:6px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:#fff;cursor:pointer}
+    .muted{color:#666;font-size:0.9rem}
+  </style>
+</head>
+<body>
+  <div class="viewer-shell">
+    <div class="viewer-toolbar">
+      <button id="prevBtn" class="btn">◀ Prev</button>
+      <button id="nextBtn" class="btn">Next ▶</button>
+      <span id="pageInfo" class="muted">Page <span id="pageNum">0</span> / <span id="pageCount">0</span></span>
+      <div style="flex:1"></div>
+      <button id="zoomOut" class="btn">-</button>
+      <button id="zoomIn" class="btn">+</button>
+      <a id="downloadLink" class="btn" href="#" target="_blank">Download</a>
+    </div>
+
+    <div class="viewer-canvas-wrap">
+      <canvas id="pdf-canvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Loader for PDF.js with CDN fallbacks to avoid MIME/no-sniff issues
+    (function(){
+      const cdns = [
+        {
+          script: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js',
+          worker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js'
+        },
+        {
+          script: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js',
+          worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
+        },
+        {
+          script: 'https://unpkg.com/pdfjs-dist/build/pdf.min.js',
+          worker: 'https://unpkg.com/pdfjs-dist/build/pdf.worker.min.js'
+        }
+      ];
+
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.crossOrigin = 'anonymous';
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error('Failed to load ' + src));
+          document.head.appendChild(s);
+        });
+      }
+
+      // Try CDNs sequentially until pdfjs is available
+      (async function initPdf() {
+        let loaded = false;
+        for (const cdn of cdns) {
+          try {
+            await loadScript(cdn.script);
+            if (window['pdfjsLib'] || window['pdfjs-dist/build/pdf']) {
+              // set worker src (prefer pdfjsLib namespace)
+              const lib = window['pdfjsLib'] || window['pdfjs-dist/build/pdf'];
+              lib.GlobalWorkerOptions.workerSrc = cdn.worker;
+              loaded = true;
+              break;
+            }
+          } catch (e) {
+            // try next
+          }
+        }
+
+        if (!loaded) {
+          document.body.innerHTML = '<div style="padding:24px">PDF.js failed to load from CDNs.</div>';
+          return;
+        }
+
+        // Minimal viewer logic (same as before)
+        const pdfjsLib = window['pdfjsLib'] || window['pdfjs-dist/build/pdf'];
+        const query = new URLSearchParams(location.search);
+        const fileUrl = query.get('file');
+        if (!fileUrl) {
+          document.body.innerHTML = '<div style="padding:24px">No file specified</div>';
+          return;
+        }
+
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageCount = 0;
+        let scale = 1.0;
+
+        const pageNumEl = document.getElementById('pageNum');
+        const pageCountEl = document.getElementById('pageCount');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const zoomIn = document.getElementById('zoomIn');
+        const zoomOut = document.getElementById('zoomOut');
+        const downloadLink = document.getElementById('downloadLink');
+
+        downloadLink.href = fileUrl;
+
+        function renderPage(num) {
+          pdfDoc.getPage(num).then(function(page) {
+            const viewport = page.getViewport({ scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const renderCtx = { canvasContext: ctx, viewport };
+            page.render(renderCtx);
+            pageNumEl.textContent = pageNum;
+          });
+        }
+
+        function loadPdfFromUrl(url) {
+          fetch(url, { credentials: 'same-origin' })
+            .then(r => { if (!r.ok) throw new Error('Failed to fetch PDF'); return r.arrayBuffer(); })
+            .then(arr => pdfjsLib.getDocument({ data: arr }).promise)
+            .then(pdf => { pdfDoc = pdf; pageCount = pdf.numPages; pageCountEl.textContent = pageCount; pageNum = 1; renderPage(pageNum); })
+            .catch(err => { document.body.innerHTML = '<div style="padding:24px">Could not load PDF: '+(err.message||err)+'</div>'; });
+        }
+
+        prevBtn.addEventListener('click', ()=>{ if (pageNum<=1) return; pageNum--; renderPage(pageNum); });
+        nextBtn.addEventListener('click', ()=>{ if (pageNum>=pageCount) return; pageNum++; renderPage(pageNum); });
+        zoomIn.addEventListener('click', ()=>{ scale = Math.min(scale + 0.25, 4); renderPage(pageNum); });
+        zoomOut.addEventListener('click', ()=>{ scale = Math.max(scale - 0.25, 0.25); renderPage(pageNum); });
+
+        loadPdfFromUrl(fileUrl);
+      })();
+    })();
+  </script>
+</body>
+</html>

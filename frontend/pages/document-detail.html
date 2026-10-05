@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document - Paperless</title>
+    <link rel="stylesheet" href="../css/style.css"> <!-- legacy fallback for older UI builds -->
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/document.css">
+</head>
+<body>
+    <header class="workspace-header">
+        <div class="container shell-bar">
+            <div class="brand-cluster">
+                <div class="brand-mark">P</div>
+                <div class="brand-copy">
+                    <span class="eyebrow">workspace</span>
+                    <strong>Paperless</strong>
+                </div>
+            </div>
+
+            <nav class="nav-pills" aria-label="Main navigation">
+                <a href="../index.html">Overview</a>
+                <a href="upload.html">Upload</a>
+                <a href="documents.html">Documents</a>
+                <a href="collections.html">Collections</a>
+            </nav>
+
+            <div class="top-actions">
+                <button class="status-pill" type="button"><span class="status-dot"></span>Ready</button>
+                <a href="upload.html" class="mini-cta">New Doc</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div id="documentDetail" class="loading"></div>
+        </div>
+    </main>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteDocModal" class="modal-overlay" aria-hidden="true">
+        <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteDocTitle">
+            <div class="collection-modal-header">
+                <div style="display:flex; align-items:center; gap:0.9rem;">
+                    <div class="collection-modal-badge">🗑️</div>
+                    <div>
+                        <h2 id="deleteDocTitle">Delete document</h2>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeDeleteDocModal()">Close</button>
+            </div>
+
+            <p class="collection-modal-copy">This will permanently remove the document from the library.</p>
+
+            <div style="margin-top: 0.6rem;">
+                <strong id="deleteDocName"></strong>
+            </div>
+
+            <div class="form-actions" style="margin-top:1.2rem; justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteDocModal()">Cancel</button>
+                <button id="confirmDeleteDocBtn" type="button" class="btn btn-danger" onclick="confirmDeleteDoc()">Delete document</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api-client.js"></script>
+    <script src="../js/document-detail.js"></script>
+</body>
+</html>

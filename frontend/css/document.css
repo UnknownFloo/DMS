@@ -1,0 +1,28 @@
+/* ===== document.css ===== */
+/* Styles specific to document detail / preview */
+
+.detail { padding: 2rem; }
+.detail-header h1 { font-size: clamp(2rem, 2.8vw, 2.6rem); letter-spacing: -0.05em; color:var(--ink); margin-bottom:0.6rem; }
+.detail-meta { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:1rem; margin-top:1.3rem; }
+.detail-meta-item { background: rgba(255,255,255,0.9); border:1px solid var(--line); border-radius:14px; padding:1rem; }
+.detail-meta-label { color:var(--muted); font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.5rem; }
+.detail-meta-value { color:var(--ink); font-weight:700; }
+
+.pdf-section { padding:1.4rem; }
+.pdf-viewer { width:100%; display:block; flex:1 1 auto; height:100%; min-height:0; border-radius:16px; background: linear-gradient(180deg,#f0f0f0,#e7e7e7); border:none; }
+.preview-frame { width:100%; border-radius:18px; border:1px solid var(--line); background: linear-gradient(180deg,#f2f3f7,#e9edf2); overflow:hidden; }
+.preview-frame img { display:block; width:100%; max-height:70vh; object-fit:contain; background:#fff; }
+.preview-frame.pdf-preview { display:flex; flex-direction:column; height: min(70vh,900px); min-height:320px; }
+.pdf-viewer {
+	/* enforce a usable preview height if CSS didn't load elsewhere */
+	height: 70vh !important;
+	min-height: 360px !important;
+}
+
+.modal-overlay.visible {
+	/* ensure modals float above other content */
+	z-index: 10000 !important;
+}
+.preview-actions { margin-top:1rem; }
+
+/* end document.css */

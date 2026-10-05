@@ -1,0 +1,9 @@
+/* ===== documents.css ===== */
+/* Styles specific to documents listing page */
+
+/* Search input / listing helpers */
+#searchInput { width:100%; padding:0.75rem; border-radius:6px; margin-bottom:1.5rem; border:1px solid var(--line); }
+
+/* Keep documents grid spacing inherited from common grid */
+
+/* end documents.css */

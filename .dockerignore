@@ -1,0 +1,14 @@
+.git
+.gitignore
+.vscode
+.idea
+README.md
+*.md
+!Dockerfile*
+!docker-compose.yml
+bin/
+obj/
+packages/
+.vs/
+.vscode/
+node_modules/
