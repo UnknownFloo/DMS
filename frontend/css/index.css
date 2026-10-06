@@ -1,0 +1,27 @@
+/* ===== index.css ===== */
+/* Styles specific to the homepage (index.html) */
+
+.hero-panel {
+    display: grid;
+    grid-template-columns: 1.3fr 0.7fr;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(255,255,255,0.78), rgba(252,250,247,0.9));
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    box-shadow: var(--shadow-soft);
+}
+
+.hero-content { position: relative; z-index:1; }
+.hero-kicker { display:inline-flex; align-items:center; padding:0.4rem 0.8rem; border-radius:999px; background: rgba(94,143,88,0.08); border:1px solid rgba(61,111,69,0.12); color:var(--primary-deep); font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; font-weight:700; }
+.hero-content h2 { margin:0.9rem 0 0.8rem; font-size:clamp(2.2rem,3vw,3rem); line-height:1.06; letter-spacing:-0.06em; color:var(--ink); }
+.hero-content p { max-width:580px; color:var(--ink-soft); font-size:1rem; }
+.hero-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:1.2rem; }
+
+.hero-metrics { display:grid; grid-template-columns: repeat(2, minmax(120px,1fr)); gap:1rem; align-content:center; position:relative; z-index:1; }
+.metric-box { background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(248,245,240,0.95)); border:1px solid var(--line); border-radius:20px; padding:1rem; min-height:160px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:var(--shadow-soft); animation: floatSoft 6s ease-in-out infinite; }
+.metric-pill { display:inline-flex; align-self:flex-start; padding:0.35rem 0.65rem; border-radius:999px; background: rgba(47,125,74,0.08); border:1px solid rgba(47,125,74,0.12); color:var(--success); font-size:0.72rem; font-weight:700; }
+
+/* end index.css */

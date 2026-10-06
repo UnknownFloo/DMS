@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collections - Paperless</title>
+    <link rel="stylesheet" href="../css/style.css"> <!-- legacy fallback for older UI builds -->
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/collections.css">
+</head>
+<body>
+    <header class="workspace-header">
+        <div class="container shell-bar">
+            <div class="brand-cluster">
+                <div class="brand-mark">P</div>
+                <div class="brand-copy">
+                    <span class="eyebrow">workspace</span>
+                    <strong>Paperless</strong>
+                </div>
+            </div>
+
+            <nav class="nav-pills" aria-label="Main navigation">
+                <a href="../index.html">Overview</a>
+                <a href="upload.html">Upload</a>
+                <a href="documents.html">Documents</a>
+                <a href="collections.html" class="active">Collections</a>
+            </nav>
+
+            <div class="top-actions">
+                <button class="status-pill" type="button"><span class="status-dot"></span>Ready</button>
+                <a href="upload.html" class="mini-cta">New Doc</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1>Collections</h1>
+                <button class="btn btn-primary" onclick="openCreateCollectionModal()">+ New Collection</button>
+            </div>
+
+            <div id="collectionsGrid" class="grid">
+                <div class="empty-state">
+                    <h3>💾 No Collections</h3>
+                    <p>Create a collection to organize your documents</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Create Collection Modal -->
+    <div id="createCollectionModal" class="modal-overlay" aria-hidden="true">
+        <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="createCollectionTitle">
+            <div class="collection-modal-header">
+                <div style="display:flex; align-items:center; gap:0.9rem;">
+                    <div class="collection-modal-badge">📁</div>
+                    <div>
+                        <h2 id="createCollectionTitle">Create collection</h2>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeCreateCollectionModal()">Close</button>
+            </div>
+
+            <p class="collection-modal-copy">Group your documents in a simple way and keep everything organized.</p>
+
+            <form class="collection-form" onsubmit="createCollection(event)">
+                <div class="form-group">
+                    <label for="collectionName">Collection name</label>
+                    <input type="text" id="collectionName" placeholder="e.g. Invoices, Finance, Clients" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="collectionDesc">Description</label>
+                    <textarea id="collectionDesc" placeholder="Optional: what belongs in this collection?"></textarea>
+                </div>
+
+                <div class="collection-form-hint">
+                    <span>Tip: collections help you sort documents quickly.</span>
+                    <span id="collectionNameHint">0/150</span>
+                </div>
+
+                <div class="form-actions" style="margin-top: 0.1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateCollectionModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary collection-submit">Create collection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="collectionDetailModal" class="modal-overlay" aria-hidden="true" style="z-index: 2001;">
+        <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="collectionDetailTitle" style="max-width: 760px; max-height: 80vh; overflow: auto;">
+            <div class="collection-modal-header" style="margin-bottom: 0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.9rem;">
+                    <div class="collection-modal-badge">📁</div>
+                    <div>
+                        <h2 id="collectionDetailTitle">Collection</h2>
+                        <div class="collection-modal-copy" style="margin-top:4px; font-size:0.95rem; color:var(--ink-soft);">View and manage collection documents</div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeCollectionDetailModal()">Close</button>
+            </div>
+
+            <div id="collectionDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteCollectionModal" class="modal-overlay" aria-hidden="true">
+        <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteCollectionTitle">
+            <div class="collection-modal-header">
+                <div style="display:flex; align-items:center; gap:0.9rem;">
+                    <div class="collection-modal-badge">🗑️</div>
+                    <div>
+                        <h2 id="deleteCollectionTitle">Delete collection</h2>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeDeleteCollectionModal()">Close</button>
+            </div>
+
+            <p class="collection-modal-copy">This will remove the collection. Documents will remain in your library.</p>
+
+            <div style="margin-top: 0.6rem;">
+                <strong id="deleteCollectionName"></strong>
+            </div>
+
+            <div class="form-actions" style="margin-top:1.2rem; justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteCollectionModal()">Cancel</button>
+                <button id="confirmDeleteBtn" type="button" class="btn btn-danger" onclick="confirmDeleteCollection()">Delete collection</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api-client.js"></script>
+    <script>
+        let collections = [];
+        let activeCollectionId = null;
+
+        function openCreateCollectionModal() {
+            const modal = document.getElementById('createCollectionModal');
+            modal.classList.add('visible');
+            modal.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('collectionName').focus(), 50);
+        }
+
+        function closeCreateCollectionModal() {
+            const modal = document.getElementById('createCollectionModal');
+            modal.classList.remove('visible');
+            modal.setAttribute('aria-hidden', 'true');
+            document.getElementById('collectionName').value = '';
+            document.getElementById('collectionDesc').value = '';
+            document.getElementById('collectionNameHint').textContent = '0/150';
+        }
+
+        const nameInput = document.getElementById('collectionName');
+        const nameHint = document.getElementById('collectionNameHint');
+        if (nameInput && nameHint) {
+            nameInput.addEventListener('input', () => {
+                nameHint.textContent = `${Math.min(nameInput.value.length, 150)}/150`;
+            });
+        }
+
+        async function loadCollections() {
+            try {
+                    const response = await fetch('/api/collections');
+                    if (!response.ok) {
+                        // If API returns 404 or no content, treat as empty list
+                        if (response.status === 404 || response.status === 204) {
+                            collections = [];
+                            renderCollections();
+                            return;
+                        }
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    // Guard against empty body
+                    const text = await response.text();
+                    collections = text ? JSON.parse(text) : [];
+                    renderCollections();
+                } catch (error) {
+                    console.error('Error loading collections:', error);
+                    showAlert('Failed to load collections', 'error');
+                }
+        }
+
+        function renderCollections() {
+            const grid = document.getElementById('collectionsGrid');
+            if (collections.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>💾 No Collections</h3>
+                        <p>Create a collection to organize your documents</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = collections.map(col => `
+                <div class="card">
+                    <div class="collection-card-shell">
+                        <div class="collection-card-top">
+                            <div class="collection-card-badge">📁</div>
+                            <div class="collection-card-count">${(col.documentCount ?? 0)} docs</div>
+                        </div>
+
+                        <div class="collection-card-title">${escapeHtml(col.name)}</div>
+                        <p class="collection-card-description">${escapeHtml(col.description || 'No description yet')}</p>
+
+                        <div class="collection-card-meta">
+                            <span>Created</span>
+                            <strong>${new Date(col.createdAtUtc).toLocaleDateString()}</strong>
+                        </div>
+
+                        <div class="collection-card-actions">
+                            <button class="btn btn-small btn-primary" onclick="viewCollection('${col.id}')">View</button>
+                            <button class="btn btn-small btn-danger btn-delete" data-id="${col.id}">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // attach delete listeners (use dataset id and collection list to show friendly name)
+            grid.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', () => openDeleteCollectionModal(btn.dataset.id));
+            });
+        }
+
+        async function viewCollection(id) {
+            activeCollectionId = id;
+            const collection = collections.find(col => col.id === id);
+            if (!collection) return;
+
+            const modal = document.getElementById('collectionDetailModal');
+            const content = document.getElementById('collectionDetailContent');
+            const title = document.getElementById('collectionDetailTitle');
+            title.textContent = collection.name;
+            modal.classList.add('visible');
+            modal.setAttribute('aria-hidden', 'false');
+
+            try {
+                const [docs, collectionDocs] = await Promise.all([
+                    api.getDocuments(),
+                    fetch(`/api/collections/${id}/documents`).then(r => r.ok ? r.json() : [])
+                ]);
+
+                const assignedIds = new Set((collectionDocs || []).map(doc => doc.id));
+
+                content.innerHTML = `
+                    <div class="collection-detail-shell">
+                        <div class="collection-stat-grid">
+                            <div class="collection-stat">
+                                <div class="collection-stat-label">Collection</div>
+                                <div class="collection-stat-value" style="font-size: 1.2rem; line-height:1.5; letter-spacing: normal; font-weight: 700;">${escapeHtml(collection.name)}</div>
+                            </div>
+                            <div class="collection-stat">
+                                <div class="collection-stat-label">Documents</div>
+                                <div class="collection-stat-value">${(collectionDocs || []).length}</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 style="margin-bottom: 0.75rem;">Assigned documents</h3>
+                            <div class="collection-doc-list">
+                                ${(collectionDocs || []).length === 0 ? '<div class="collection-empty-state">No documents in this collection yet.</div>' : (collectionDocs || []).map(doc => `
+                                    <div class="collection-doc-row">
+                                        <div class="collection-doc-info">
+                                            <span class="collection-doc-name">${escapeHtml(doc.fileName)}</span>
+                                            <span class="collection-doc-type">${escapeHtml(doc.contentType || 'unknown')}</span>
+                                        </div>
+                                            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                                                <a class="btn btn-small btn-secondary" href="document-detail.html?id=${doc.id}" target="_blank" rel="noopener noreferrer">Preview</a>
+                                                
+                                                ${!assignedIds.has(doc.id) ? `
+                                                    <button class="btn btn-small btn-primary" type="button" onclick="attachDocumentToCollection('${doc.id}', '${id}')">Add</button>
+                                                ` : ''}
+
+                                                <button class="btn btn-small btn-danger" type="button" onclick="removeDocumentFromCollection('${doc.id}', '${id}')">Remove</button>
+                                            </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 style="margin-bottom: 0.75rem;">Available documents</h3>
+                            <div class="collection-doc-list">
+                                ${docs.length === 0 ? '<div class="collection-empty-state">No documents uploaded yet.</div>' : docs.filter(doc => !assignedIds.has(doc.id)).map(doc => `
+                                    <div class="collection-doc-row">
+                                        <div class="collection-doc-info">
+                                            <span class="collection-doc-name">${escapeHtml(doc.fileName)}</span>
+                                            <span class="collection-doc-type">${escapeHtml(doc.contentType || 'unknown')}</span>
+                                        </div>
+                                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                                            <a class="btn btn-small btn-secondary" href="document-detail.html?id=${doc.id}" target="_blank" rel="noopener noreferrer">Open</a>
+                                            <button class="btn btn-small btn-primary" type="button" onclick="attachDocumentToCollection('${doc.id}', '${id}')">Add</button>
+                                        </div>
+                                    </div>
+                                `).join('') || '<div class="collection-empty-state">All documents are already assigned here.</div>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading documents for collection:', error);
+                content.innerHTML = '<div class="alert alert-error">Could not load collection documents.</div>';
+            }
+        }
+
+        function closeCollectionDetailModal() {
+            document.getElementById('collectionDetailModal').classList.remove('visible');
+            document.getElementById('collectionDetailModal').setAttribute('aria-hidden', 'true');
+            activeCollectionId = null;
+        }
+
+        async function attachDocumentToCollection(documentId, collectionId) {
+            try {
+                const response = await fetch(`/api/collections/${collectionId}/documents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ documentId })
+                });
+
+                if (response.ok || response.status === 204) {
+                    showAlert('Document added to collection', 'success');
+                    if (activeCollectionId) {
+                        await viewCollection(activeCollectionId);
+                    }
+                    return;
+                }
+
+                showAlert('Could not add document to collection', 'error');
+            } catch (error) {
+                console.error('Error adding document to collection:', error);
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function removeDocumentFromCollection(documentId, collectionId) {
+            try {
+                const response = await fetch(`/api/collections/${collectionId}/documents/${documentId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok || response.status === 204) {
+                    showAlert('Document removed from collection', 'success');
+                    if (activeCollectionId) {
+                        await viewCollection(activeCollectionId);
+                    }
+                    return;
+                }
+
+                showAlert('Could not remove document from collection', 'error');
+            } catch (error) {
+                console.error('Error removing document from collection:', error);
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function createCollection(event) {
+            event.preventDefault();
+            const name = document.getElementById('collectionName').value.trim();
+            const description = document.getElementById('collectionDesc').value.trim();
+
+            if (!name) {
+                showAlert('Please enter a collection name', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/collections', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description })
+                });
+
+                if (response.ok) {
+                    showAlert('Collection created successfully', 'success');
+                    closeCreateCollectionModal();
+                    loadCollections();
+                } else {
+                    showAlert('Failed to create collection', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating collection:', error);
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteCollection(id) {
+            // kept for backward compatibility; performs direct delete
+            try {
+                const response = await fetch(`/api/collections/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showAlert('Collection deleted', 'success');
+                    loadCollections();
+                } else {
+                    showAlert('Failed to delete collection', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting collection:', error);
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Modal-driven delete flow
+        function openDeleteCollectionModal(id) {
+            const modal = document.getElementById('deleteCollectionModal');
+            const col = collections.find(c => c.id === id) || { name: '' };
+            document.getElementById('deleteCollectionName').textContent = col.name;
+            modal.dataset.id = id;
+            modal.classList.add('visible');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeDeleteCollectionModal() {
+            const modal = document.getElementById('deleteCollectionModal');
+            modal.classList.remove('visible');
+            modal.setAttribute('aria-hidden', 'true');
+            delete modal.dataset.id;
+        }
+
+        async function confirmDeleteCollection() {
+            const modal = document.getElementById('deleteCollectionModal');
+            const id = modal.dataset.id;
+            if (!id) return closeDeleteCollectionModal();
+
+            try {
+                const resp = await fetch(`/api/collections/${id}`, { method: 'DELETE' });
+                if (resp.ok) {
+                    showAlert('Collection deleted', 'success');
+                    closeDeleteCollectionModal();
+                    await loadCollections();
+                } else {
+                    showAlert('Failed to delete collection', 'error');
+                }
+            } catch (err) {
+                console.error('Error deleting collection:', err);
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.body.insertBefore(alert, document.body.firstChild);
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCollections);
+    </script>
+</body>
+</html>

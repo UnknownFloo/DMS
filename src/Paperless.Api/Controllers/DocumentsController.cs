@@ -18,6 +18,26 @@ public class DocumentsController(DocumentService service) : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    [HttpGet("{id:guid}/file")]
+    public async Task<IActionResult> GetFile(Guid id, CancellationToken ct)
+    {
+        var document = await service.GetDocumentForFileAsync(id, ct);
+        if (document is null)
+        {
+            return NotFound();
+        }
+
+        var filePath = document.StoragePath;
+        if (!System.IO.File.Exists(filePath))
+        {
+            return NotFound();
+        }
+
+        var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath, ct);
+        Response.Headers.ContentDisposition = $"inline; filename=\"{document.FileName}\"";
+        return File(fileBytes, document.ContentType);
+    }
+
     [HttpPost]
     public async Task<ActionResult<DocumentResponse>> Create(CreateDocumentRequest request, CancellationToken ct)
     {
@@ -27,6 +47,20 @@ public class DocumentsController(DocumentService service) : ControllerBase
             return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
         }
         catch (ArgumentException ex) { return ValidationProblem(ex.Message); }
+    }
+
+    [HttpPost("upload")]
+    public async Task<ActionResult<DocumentResponse>> Upload(IFormFile file, CancellationToken ct, [FromForm] string description = "")
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file provided");
+
+            var result = await service.UploadFileAsync(file, description, ct);
+            return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
+        }
+        catch (ArgumentException ex) { return BadRequest(ex.Message); }
     }
 
     [HttpPut("{id:guid}")]

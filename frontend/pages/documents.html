@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents - Paperless</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/documents.css">
+</head>
+<body>
+    <header class="workspace-header">
+        <div class="container shell-bar">
+            <div class="brand-cluster">
+                <div class="brand-mark">P</div>
+                <div class="brand-copy">
+                    <span class="eyebrow">workspace</span>
+                    <strong>Paperless</strong>
+                </div>
+            </div>
+
+            <nav class="nav-pills" aria-label="Main navigation">
+                <a href="../index.html">Overview</a>
+                <a href="upload.html">Upload</a>
+                <a href="documents.html" class="active">Documents</a>
+                <a href="collections.html">Collections</a>
+            </nav>
+
+            <div class="top-actions">
+                <button class="status-pill" type="button"><span class="status-dot"></span>Ready</button>
+                <a href="upload.html" class="mini-cta">New Doc</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1>All Documents</h1>
+                <a href="upload.html" class="btn btn-primary">Upload New</a>
+            </div>
+
+            <div class="section">
+                <input type="text" id="searchInput" placeholder="Search documents..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 1.5rem;">
+                
+                <div id="documentsList" class="grid">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/api-client.js"></script>
+    <script src="../js/documents.js"></script>
+</body>
+</html>

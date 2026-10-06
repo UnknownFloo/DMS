@@ -1,0 +1,16 @@
+/* ===== upload.css ===== */
+/* Styles specific to upload page */
+
+.file-upload-area { border: 1px dashed rgba(61, 111, 69, 0.34); background: linear-gradient(180deg, rgba(61, 111, 69, 0.02), rgba(61, 111, 69, 0.05)); border-radius:18px; padding:2rem 1rem; text-align:center; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.file-upload-area:hover { transform: translateY(-1px); border-color: rgba(61,111,69,0.5); box-shadow: 0 12px 22px rgba(61,115,71,0.08); }
+.file-upload-area.dragover { border-color: rgba(61,111,69,0.7); background: rgba(61,111,69,0.05); }
+.file-upload-icon { font-size:2rem; margin-bottom:0.8rem; }
+.file-upload-text { color:var(--ink); font-weight:700; }
+.file-upload-hint { color:var(--ink-soft); margin-top:0.4rem; font-size:0.9rem; }
+.file-upload-area input[type="file"] { display:none; }
+.file-list { list-style:none; margin-top:1rem; display:grid; gap:10px; }
+.file-list-item { display:flex; justify-content:space-between; gap:0.75rem; background: rgba(255,255,255,0.9); border:1px solid var(--line); border-radius:12px; padding:0.8rem 0.9rem; color:var(--ink-soft); }
+.file-picker-button { display:inline-flex; align-items:center; justify-content:center; margin-top:1rem; padding:0.8rem 1.2rem; border-radius:12px; background: linear-gradient(135deg,#6b9e65,#3d7347); color:#fff !important; border:1px solid rgba(32,74,41,0.45); box-shadow:0 12px 24px rgba(61,115,71,0.15); font-weight:700; cursor:pointer; transition: transform .2s, box-shadow .2s; text-decoration:none; }
+.file-picker-button:hover { transform: translateY(-1px); box-shadow:0 16px 28px rgba(61,115,71,0.2); }
+
+/* end upload.css */

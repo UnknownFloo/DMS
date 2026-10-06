@@ -18,6 +18,7 @@ public class PaperlessDbContext(DbContextOptions<PaperlessDbContext> options) : 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.FileName).HasMaxLength(255).IsRequired();
             entity.Property(x => x.ContentType).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.StoragePath).HasMaxLength(500).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(2000);
         });
 
