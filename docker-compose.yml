@@ -17,18 +17,40 @@ services:
     networks:
       - paperless-network
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - paperless-network
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=paperless;Username=paperless;Password=paperless
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__User: guest
+      RabbitMQ__Password: guest
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
     ports:
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - paperless-network
@@ -37,6 +59,21 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - paperless-network
 
   ui:
     build:

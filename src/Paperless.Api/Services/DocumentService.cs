@@ -1,13 +1,15 @@
 using Paperless.Api.DTOs;
 using Paperless.Api.Entities;
 using Paperless.Api.Mapping;
+using Paperless.Api.Queues;
 using Paperless.Api.Repositories;
 
 namespace Paperless.Api.Services;
 
-public class DocumentService(IDocumentRepository documents, DocumentStorageOptions? storageOptions = null)
+public class DocumentService(IDocumentRepository documents, DocumentStorageOptions? storageOptions = null, IRabbitMqDocumentMessagePublisher? messagePublisher = null)
 {
     private readonly DocumentStorageOptions _storageOptions = storageOptions ?? new DocumentStorageOptions(Path.Combine(AppContext.BaseDirectory, "App_Data", "Uploads"));
+    private readonly IRabbitMqDocumentMessagePublisher? _messagePublisher = messagePublisher;
 
     public async Task<DocumentResponse> CreateAsync(CreateDocumentRequest request, CancellationToken ct)
     {
@@ -29,6 +31,7 @@ public class DocumentService(IDocumentRepository documents, DocumentStorageOptio
 
         await documents.AddAsync(document, ct);
         await documents.SaveChangesAsync(ct);
+        _messagePublisher?.PublishDocumentUploaded(document.Id, document.FileName, document.Description);
         return DocumentMapper.ToResponse(document);
     }
 
@@ -98,6 +101,7 @@ public class DocumentService(IDocumentRepository documents, DocumentStorageOptio
 
         await documents.AddAsync(document, ct);
         await documents.SaveChangesAsync(ct);
+        _messagePublisher?.PublishDocumentUploaded(document.Id, document.FileName, document.Description);
         return DocumentMapper.ToResponse(document);
     }
 

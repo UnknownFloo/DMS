@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Paperless.Api.Data;
+using Paperless.Api.Queues;
 using Paperless.Api.Repositories;
 using Paperless.Api.Services;
 
@@ -9,7 +10,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS to allow frontend to communicate with API
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
@@ -27,6 +27,7 @@ builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<CollectionService>();
+builder.Services.AddSingleton<IRabbitMqDocumentMessagePublisher, RabbitMqDocumentMessagePublisher>();
 
 var uploadsFolder = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "Uploads");
 Directory.CreateDirectory(uploadsFolder);
@@ -35,7 +36,6 @@ builder.Services.AddSingleton(new DocumentStorageOptions(uploadsFolder));
 
 var app = builder.Build();
 
-// Enable CORS
 app.UseCors("AllowFrontend");
 
 if (app.Environment.IsDevelopment())
