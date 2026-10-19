@@ -3,6 +3,7 @@ using Paperless.Api.DTOs;
 using Paperless.Api.Entities;
 using Paperless.Api.Repositories;
 using Paperless.Api.Services;
+using Xunit;
 
 namespace Paperless.Api.Tests;
 

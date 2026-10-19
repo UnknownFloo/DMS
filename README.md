@@ -1,142 +1,208 @@
-# Paperless – Sprint 1 (C# / .NET 10)
+# Paperless DMS
 
-## Sprint-1 scope
-- ASP.NET Core REST server
-- PostgreSQL persistence with Entity Framework Core / Npgsql
-- Repository pattern and entity mapping
-- Unit tests with Moq; production database is mocked out
-- Docker Compose for REST API + PostgreSQL
-- Additional use case: **Collections** (create a collection and assign documents to it)
+Project overview for the SWEN3 semester project. The project is split into sprint-based milestones and follows the required architecture of REST API + database + web frontend + message queue.
 
-## Architecture
+## Sprint 1 – Project setup, REST API, DAL
+
+### Goal
+- .NET/C# project setup
+- REST API with code-first endpoints
+- PostgreSQL persistence with Entity Framework Core
+- Repository pattern
+- Unit tests with mocked repository layer
+- Docker Compose for API + database
+- Additional use case: Collections
+
+### Architecture
 `Controller -> Service -> Repository -> EF Core DbContext -> PostgreSQL`
 
-Entities:
+### Main entities
 - `Document`
 - `Tag`
 - `DocumentTag`
-- `Collection` (additional use case)
-- `CollectionDocument` (additional use case)
+- `Collection`
+- `CollectionDocument`
 
-## Run with Docker
-
+### Run Sprint 1 locally
 ```bash
-docker compose build
-docker compose up
+cd /home/roberto/Downloads/SWEN_3/DMS
+dotnet restore Paperless.sln
+dotnet build Paperless.sln -nologo
+dotnet test Paperless.sln -nologo
 ```
 
-API: http://localhost:8080
-Swagger: http://localhost:8080/swagger
-Health: http://localhost:8080/health
-
-The API creates the database schema automatically on startup (`EnsureCreated`) for the Sprint-1 setup.
-
-## Sprint 2 — Additions / Notes
-
-- UI served from `frontend/` by the `ui` (Nginx) service defined in `docker-compose.yml`.
-- CSS was split into `css/common.css` + per-page files (`index.css`, `upload.css`, `collections.css`, `documents.css`, `document.css`). A lightweight compatibility shim `css/style.css` remains for older deployments.
-- API client: `frontend/js/api-client.js` uses a relative `/api` base so the frontend works behind the containerized Nginx proxy.
-- PDF preview: an embedded PDF.js viewer was added at `frontend/vendor/pdfjs/viewer.html`. Document preview frames now point to that viewer for consistent in‑app rendering (no reliance on browser extensions).
-- Nginx proxy tweaks:
-  - `/api/health` is forwarded to the API's `/health` endpoint for Compose health checks.
-  - `/api/` requests are proxied to the API controllers (e.g. `/api/collections`).
-  - Note: static assets are configured with long `expires` headers (1y). For development, either clear your browser cache, enable DevTools → Disable cache, or temporarily change `nginx.conf` to reduce expires.
-
-Troubleshooting / common commands
-
-1) Rebuild UI after frontend changes so the Nginx image contains the updated files:
-
-```bash
-docker compose build ui
-docker compose up -d ui
-```
-
-2) Full rebuild (API + UI + DB):
-
+### Docker for Sprint 1
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-3) Quick checks:
-
-```bash
-curl -f http://localhost/           # frontend index
-curl -f http://localhost/api/health # API health via nginx proxy
-curl -I http://localhost/css/common.css
-curl -I http://localhost/vendor/pdfjs/viewer.html
-```
-
-If the viewer script from a CDN is blocked due to MIME or `X-Content-Type-Options: nosniff`, add the local `pdf.min.js`/`pdf.worker.min.js` into `frontend/vendor/pdfjs/` (I can add these locally if you prefer an offline copy).
-
-If everything above returns the expected responses, the Sprint‑2 MUST‑HAVEs are satisfied: UI served by a webserver container, pages served from the server, frontend communicates with the REST API, and Docker Compose runs the UI container.
-
-## Frontend / UI notes (Sprint 2)
-
-- The frontend is served from the `frontend/` folder by the `ui` service (Nginx) defined in `docker-compose.yml`.
-- During development the frontend uses a relative API path (`/api`) so requests are proxied through Nginx to the API container. This avoids hardcoding `localhost:8080` and works both in containers and when serving files from the host.
-- Nginx config (`nginx.conf`) sets long caching for static assets (`expires 1y`). When developing CSS/JS changes either:
-  - disable the cache headers in `nginx.conf`, or
-  - append a cache-busting query string to assets (e.g. `css/style.css?v=2`) while testing, or
-  - open DevTools → Network and check "Disable cache" while DevTools is open.
-
-Quick verification after starting Docker Compose:
-
-```bash
-# build and start
-docker compose build
-docker compose up -d
-
-# frontend should be reachable
-curl -f http://localhost/ | head -n 5
-
-# API health
-curl -f http://localhost/api/health
-```
-
-If `http://localhost/` returns the frontend HTML and `http://localhost/api/health` is OK, the Sprint-2 web UI integration is functioning.
-
-## REST endpoints
-
-### Documents
+### Sprint 1 endpoints
 - `GET /api/documents`
 - `GET /api/documents/{id}`
 - `POST /api/documents`
 - `PUT /api/documents/{id}`
 - `DELETE /api/documents/{id}`
 
-Example:
-```json
-{
-  "fileName": "invoice-001.pdf",
-  "contentType": "application/pdf",
-  "description": "March invoice",
-  "tags": ["invoice", "finance"]
-}
-```
-
 ### Additional use case: Collections
-- `POST /api/collections`
+- `GET /api/collections`
 - `GET /api/collections/{id}`
+- `POST /api/collections`
 - `POST /api/collections/{id}/documents`
 
-Example:
-```json
-{
-  "name": "Taxes 2026",
-  "description": "Tax-related documents"
-}
+---
+
+## Sprint 2 – Web UI
+
+### Goal
+- Web server service (Nginx)
+- UI served from static frontend files
+- Dashboard and detail pages served by the webserver
+- Frontend communication with REST API
+- Docker Compose extended with UI container
+
+### Frontend
+The frontend is served from the `frontend/` directory through the `ui` container.
+
+### Start Sprint 2 stack
+```bash
+docker compose up -d --build
 ```
 
-Then assign a document:
-```json
-{
-  "documentId": "<document-guid>"
-}
+### Frontend URLs
+- Frontend: http://localhost/
+- API Swagger: http://localhost:8080/swagger
+- API health: http://localhost:8080/health
+
+### Useful checks
+```bash
+curl -f http://localhost/
+curl -f http://localhost/api/health
 ```
 
-## Unit tests
+### Notes
+- The frontend uses relative API requests (`/api`) so it can work through the Nginx proxy.
+- Static files are served by Nginx and cached with header settings in `nginx.conf`.
+
+---
+
+## Sprint 3 – RabbitMQ / queue integration
+
+### Goal
+- Extend Docker Compose with RabbitMQ
+- Integrate queue publishing into REST API
+- Uploading a document triggers a message to RabbitMQ
+- Empty OCR worker consumes the queue and logs the message
+- Exception handling and logging added
+
+### Services in Sprint 3
+- PostgreSQL
+- API
+- UI
+- RabbitMQ
+- OCR worker
+
+### Start Sprint 3 stack
+```bash
+cd /home/roberto/Downloads/SWEN_3/DMS
+docker compose up -d --build
+```
+
+### Confirm queue flow
+1. Open the frontend at http://localhost/
+2. Upload a PDF document
+3. Check logs:
 
 ```bash
-dotnet test Paperless.sln
+docker compose logs -f worker
 ```
+
+Expected output example:
+```text
+[worker] OCR message received: {"documentId":"...","fileName":"...pdf","eventType":"document.uploaded"}
+```
+
+This confirms:
+- upload succeeded in the frontend/API
+- API published message to RabbitMQ
+- worker consumed the message from the queue
+
+### RabbitMQ access
+- RabbitMQ UI: http://localhost:15672
+- Username: `guest`
+- Password: `guest`
+
+### Worker queue name
+- `document-uploaded`
+
+---
+
+## Project run commands
+
+### Build and test
+```bash
+dotnet restore Paperless.sln
+dotnet build Paperless.sln -nologo
+dotnet test Paperless.sln -nologo
+```
+
+### Docker lifecycle
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs -f
+docker compose down
+```
+
+### Check PostgreSQL data
+```bash
+docker compose exec postgres psql -U paperless -d paperless -c "select * from \"Documents\";"
+```
+
+---
+
+## Git commands
+
+Check status:
+```bash
+git status
+```
+
+Stage all changes:
+```bash
+git add .
+```
+
+Commit:
+```bash
+git commit -m "Sprint 3: RabbitMQ queue integration and worker"
+```
+
+Push:
+```bash
+git push
+```
+
+If the branch is new:
+```bash
+git push --set-upstream origin <branch-name>
+```
+
+---
+
+## Requirements
+- Docker
+- Docker Compose
+- .NET SDK 8.0
+
+## Credentials
+- PostgreSQL: `paperless` / `paperless`
+- RabbitMQ: `guest` / `guest`
+
+## Final sprint validation
+Successful Sprint 3 validation is:
+- app builds without errors
+- Docker Compose starts all services
+- frontend is reachable via http://localhost/
+- API is reachable and health checks pass
+- uploading a document produces a queue message visible in the worker log
