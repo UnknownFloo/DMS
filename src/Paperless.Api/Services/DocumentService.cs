@@ -3,23 +3,31 @@ using Paperless.Api.Entities;
 using Paperless.Api.Mapping;
 using Paperless.Api.Queues;
 using Paperless.Api.Repositories;
+using Paperless.Api.Storage;
 
 namespace Paperless.Api.Services;
 
-public class DocumentService(IDocumentRepository documents, DocumentStorageOptions? storageOptions = null, IRabbitMqDocumentMessagePublisher? messagePublisher = null)
+public class DocumentService(
+    IDocumentRepository documents,
+    DocumentStorageOptions? storageOptions = null,
+    IRabbitMqDocumentMessagePublisher? messagePublisher = null,
+    IDocumentStorage? documentStorage = null)
 {
     private readonly DocumentStorageOptions _storageOptions = storageOptions ?? new DocumentStorageOptions(Path.Combine(AppContext.BaseDirectory, "App_Data", "Uploads"));
     private readonly IRabbitMqDocumentMessagePublisher? _messagePublisher = messagePublisher;
+    private readonly IDocumentStorage _documentStorage = documentStorage ?? new LocalDocumentStorage(
+        storageOptions?.RootPath ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "Uploads"));
 
     public async Task<DocumentResponse> CreateAsync(CreateDocumentRequest request, CancellationToken ct)
     {
         ValidateName(request.FileName);
+        var documentId = Guid.NewGuid();
         var document = new Document
         {
-            Id = Guid.NewGuid(),
+            Id = documentId,
             FileName = request.FileName.Trim(),
             ContentType = string.IsNullOrWhiteSpace(request.ContentType) ? "application/pdf" : request.ContentType.Trim(),
-            StoragePath = GetStoragePath(request.FileName.Trim()),
+            StoragePath = GetStoragePath(documentId, request.FileName.Trim()),
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             UploadedAtUtc = DateTime.UtcNow
         };
@@ -31,7 +39,6 @@ public class DocumentService(IDocumentRepository documents, DocumentStorageOptio
 
         await documents.AddAsync(document, ct);
         await documents.SaveChangesAsync(ct);
-        _messagePublisher?.PublishDocumentUploaded(document.Id, document.FileName, document.Description);
         return DocumentMapper.ToResponse(document);
     }
 
@@ -45,6 +52,8 @@ public class DocumentService(IDocumentRepository documents, DocumentStorageOptio
     {
         return await documents.GetByIdAsync(id, ct);
     }
+
+    public Task<Stream?> OpenDocumentAsync(string storagePath, CancellationToken ct) => _documentStorage.GetAsync(storagePath, ct);
 
     public async Task<IReadOnlyList<DocumentResponse>> GetAllAsync(CancellationToken ct) =>
         (await documents.GetAllAsync(ct)).Select(DocumentMapper.ToResponse).ToArray();
@@ -66,10 +75,8 @@ public class DocumentService(IDocumentRepository documents, DocumentStorageOptio
         var document = await documents.GetByIdAsync(id, ct);
         if (document is null) return false;
 
-        if (!string.IsNullOrWhiteSpace(document.StoragePath) && File.Exists(document.StoragePath))
-        {
-            File.Delete(document.StoragePath);
-        }
+        if (!string.IsNullOrWhiteSpace(document.StoragePath))
+            await _documentStorage.DeleteAsync(document.StoragePath, ct);
 
         await documents.DeleteAsync(document, ct);
         await documents.SaveChangesAsync(ct);
@@ -84,37 +91,38 @@ public class DocumentService(IDocumentRepository documents, DocumentStorageOptio
         ValidateName(file.FileName);
 
         var safeFileName = Path.GetFileName(file.FileName).Trim();
+        var documentId = Guid.NewGuid();
         var document = new Document
         {
-            Id = Guid.NewGuid(),
+            Id = documentId,
             FileName = safeFileName,
             ContentType = file.ContentType ?? "application/octet-stream",
-            StoragePath = GetStoragePath(safeFileName),
+            StoragePath = GetStoragePath(documentId, safeFileName),
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             UploadedAtUtc = DateTime.UtcNow
         };
 
-        var targetPath = document.StoragePath;
-        Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-        await using var stream = File.Create(targetPath);
-        await file.CopyToAsync(stream, ct);
+        await using var stream = file.OpenReadStream();
+        await _documentStorage.PutAsync(document.StoragePath, stream, file.Length, document.ContentType, ct);
+        try
+        {
+            await documents.AddAsync(document, ct);
+            await documents.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            await _documentStorage.DeleteAsync(document.StoragePath, ct);
+            throw;
+        }
 
-        await documents.AddAsync(document, ct);
-        await documents.SaveChangesAsync(ct);
-        _messagePublisher?.PublishDocumentUploaded(document.Id, document.FileName, document.Description);
+        _messagePublisher?.PublishDocumentUploaded(document.Id, document.FileName, document.Description, document.StoragePath);
         return DocumentMapper.ToResponse(document);
     }
 
-    private string GetStoragePath(string fileName)
+    private static string GetStoragePath(Guid documentId, string fileName)
     {
         var safeFileName = Path.GetFileName(fileName);
-        var id = Guid.NewGuid();
-        var extension = Path.HasExtension(safeFileName) ? Path.GetExtension(safeFileName) : string.Empty;
-        var fileNameWithoutExt = string.IsNullOrWhiteSpace(Path.GetFileNameWithoutExtension(safeFileName))
-            ? "document"
-            : Path.GetFileNameWithoutExtension(safeFileName);
-
-        return Path.Combine(_storageOptions.RootPath, $"{fileNameWithoutExt}_{id}{extension}");
+        return $"documents/{documentId:N}/{safeFileName}";
     }
 
     private static void ValidateName(string fileName)

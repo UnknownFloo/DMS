@@ -25,11 +25,76 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_ERLANG_COOKIE: paperless-local-rabbitmq-cookie
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - paperless-network
+
+  silo:
+    image: pgsty/silo:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: paperless
+      MINIO_ROOT_PASSWORD: paperless-secret-key
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - silo_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mcli alias set local http://127.0.0.1:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" >/dev/null 2>&1 && mcli ready local"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+    networks:
+      - paperless-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      node.store.allow_mmap: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    networks:
+      - paperless-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - paperless-network
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.17.0
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     networks:
       - paperless-network
 
@@ -43,6 +108,12 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__User: guest
       RabbitMQ__Password: guest
+      ObjectStorage__Endpoint: silo:9000
+      ObjectStorage__AccessKey: paperless
+      ObjectStorage__SecretKey: paperless-secret-key
+      ObjectStorage__Bucket: paperless-documents
+      ObjectStorage__UseSSL: "false"
+      Elasticsearch__Url: http://elasticsearch:9200
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
     ports:
@@ -51,6 +122,10 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      silo:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     networks:
       - paperless-network
@@ -69,8 +144,33 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      OBJECT_STORAGE_ENDPOINT: silo:9000
+      OBJECT_STORAGE_ACCESS_KEY: paperless
+      OBJECT_STORAGE_SECRET_KEY: paperless-secret-key
+      OBJECT_STORAGE_BUCKET: paperless-documents
+      OBJECT_STORAGE_USE_SSL: "false"
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      silo:
+        condition: service_healthy
+    networks:
+      - paperless-network
+
+  indexer:
+    build:
+      context: .
+      dockerfile: Dockerfile.indexer
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     networks:
       - paperless-network
@@ -91,6 +191,8 @@ services:
 
 volumes:
   postgres_data:
+  silo_data:
+  elasticsearch_data:
 
 networks:
   paperless-network:

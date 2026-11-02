@@ -137,6 +137,49 @@ This confirms:
 
 ---
 
+## Sprint 4 – Silo, OCR, Elasticsearch
+
+### Processing flow
+- PDF uploads are stored in the Silo object store through its S3-compatible API.
+- RabbitMQ's `document-uploaded` queue carries the document ID and Silo object key.
+- The OCR worker downloads each PDF, renders every page with Ghostscript, and recognizes German/English text with Tesseract.
+- OCR results are published to `document-ocr-completed` and written idempotently to Elasticsearch.
+- `GET /api/documents/search?q=Hello` searches file names, descriptions, and recognized text.
+- The home page at http://localhost/ and the Documents page use that search endpoint.
+
+### Services and local URLs
+- Paperless UI: http://localhost/
+- API Swagger: http://localhost:8080/swagger
+- Silo S3 API: http://localhost:9000
+- Silo console: http://localhost:9001 (user `paperless`, password `paperless-secret-key`)
+- RabbitMQ management: http://localhost:15672 (user/password `guest`)
+- Elasticsearch: http://localhost:9200
+- Kibana: http://localhost:5601
+- Logstash TCP input: localhost:5044
+
+### Start and check the full stack
+```bash
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+Upload `HelloWorld.pdf` through the Upload page at http://localhost/. Wait for the worker and indexer to finish, then search for `Hello` in the home-page search field. The PDF should appear in the results. Processing can be followed with:
+
+```bash
+docker compose logs -f worker indexer
+```
+
+The OCR worker requires a PDF with a readable scan or existing text layer. Search results are available after the indexing worker processes the OCR event.
+
+### Storage and cloud requirements
+This project uses the `pgsty/silo` container image, not the removed MinIO image. Silo exposes a local S3-compatible endpoint; the MinIO-compatible NuGet client is only used as an S3 protocol client. All credentials and data are local to Docker Compose. No AWS account, AWS SDK, or AWS service is used.
+
+### Data persistence
+PostgreSQL, Silo, and Elasticsearch data are stored in named Docker volumes. To remove the data as well as containers, run `docker compose down -v`.
+
+---
+
 ## Project run commands
 
 ### Build and test
@@ -193,16 +236,20 @@ git push --set-upstream origin <branch-name>
 ## Requirements
 - Docker
 - Docker Compose
-- .NET SDK 8.0
+- .NET SDK 10.0.100 for local builds (`global.json`); the applications target .NET 8
 
 ## Credentials
 - PostgreSQL: `paperless` / `paperless`
 - RabbitMQ: `guest` / `guest`
+- Silo: `paperless` / `paperless-secret-key` (local development only)
 
 ## Final sprint validation
-Successful Sprint 3 validation is:
+Successful Sprint 4 validation is:
 - app builds without errors
-- Docker Compose starts all services
+- `docker compose build` completes without errors
+- `docker compose up -d` starts all required containers
 - frontend is reachable via http://localhost/
 - API is reachable and health checks pass
-- uploading a document produces a queue message visible in the worker log
+- PDF uploads are stored in Silo
+- OCR and indexing workers complete their queue messages
+- searching for `Hello` after uploading `HelloWorld.pdf` returns that document
