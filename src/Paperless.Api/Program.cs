@@ -3,6 +3,7 @@ using Paperless.Api.Data;
 using Paperless.Api.Queues;
 using Paperless.Api.Repositories;
 using Paperless.Api.Services;
+using Paperless.Api.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,9 @@ builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<CollectionService>();
 builder.Services.AddSingleton<IRabbitMqDocumentMessagePublisher, RabbitMqDocumentMessagePublisher>();
+builder.Services.AddSingleton<IDocumentStorage, S3DocumentStorage>();
+builder.Services.AddHttpClient<ElasticsearchDocumentSearch>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["Elasticsearch:Url"] ?? "http://localhost:9200"));
 
 var uploadsFolder = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "Uploads");
 Directory.CreateDirectory(uploadsFolder);

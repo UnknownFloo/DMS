@@ -2,6 +2,7 @@ using Moq;
 using Paperless.Api.DTOs;
 using Paperless.Api.Entities;
 using Paperless.Api.Repositories;
+using Paperless.Api.Queues;
 using Paperless.Api.Services;
 using Xunit;
 using Microsoft.AspNetCore.Http;
@@ -155,7 +156,7 @@ public class DocumentServiceTests
 
         Assert.Equal("invoice.pdf", result.FileName);
         Assert.Equal("Uploaded from test", result.Description);
-        Assert.True(File.Exists(result.StoragePath));
+        Assert.True(File.Exists(Path.Combine(root, result.StoragePath.Replace('/', Path.DirectorySeparatorChar))));
         repo.Verify(x => x.AddAsync(It.Is<Document>(d => d.FileName == "invoice.pdf"), It.IsAny<CancellationToken>()), Times.Once);
         repo.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
@@ -203,7 +204,7 @@ public class DocumentServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_PublishesRabbitMqEvent_WhenPublisherProvided()
+    public async Task CreateAsync_DoesNotPublishOcrEvent_ForMetadataOnlyDocument()
     {
         var repo = new Mock<IDocumentRepository>();
         repo.Setup(x => x.AddAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -214,7 +215,7 @@ public class DocumentServiceTests
 
         var result = await service.CreateAsync(new CreateDocumentRequest("hello.pdf", "application/pdf", "hello", null), CancellationToken.None);
 
-        publisher.Verify(x => x.PublishDocumentUploaded(result.Id, result.FileName, result.Description), Times.Once);
+        publisher.Verify(x => x.PublishDocumentUploaded(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
     [Fact]
@@ -394,7 +395,7 @@ public class DocumentServiceTests
 
         var result = await service.UploadFileAsync(file, "uploading", CancellationToken.None);
 
-        publisher.Verify(x => x.PublishDocumentUploaded(result.Id, result.FileName, result.Description), Times.Once);
+        publisher.Verify(x => x.PublishDocumentUploaded(result.Id, result.FileName, result.Description, result.StoragePath), Times.Once);
         Directory.Delete(root, recursive: true);
     }
 

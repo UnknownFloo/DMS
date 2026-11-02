@@ -6,10 +6,17 @@ namespace Paperless.Api.Controllers;
 
 [ApiController]
 [Route("api/documents")]
-public class DocumentsController(DocumentService service) : ControllerBase
+public class DocumentsController(DocumentService service, ElasticsearchDocumentSearch documentSearch) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<DocumentResponse>>> GetAll(CancellationToken ct) => Ok(await service.GetAllAsync(ct));
+
+    [HttpGet("search")]
+    public async Task<ActionResult<IReadOnlyList<DocumentSearchResult>>> Search([FromQuery] string q, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(q)) return Ok(Array.Empty<DocumentSearchResult>());
+        return Ok(await documentSearch.SearchAsync(q, ct));
+    }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<DocumentResponse>> Get(Guid id, CancellationToken ct)
@@ -27,15 +34,10 @@ public class DocumentsController(DocumentService service) : ControllerBase
             return NotFound();
         }
 
-        var filePath = document.StoragePath;
-        if (!System.IO.File.Exists(filePath))
-        {
-            return NotFound();
-        }
-
-        var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath, ct);
+        var content = await service.OpenDocumentAsync(document.StoragePath, ct);
+        if (content is null) return NotFound();
         Response.Headers.ContentDisposition = $"inline; filename=\"{document.FileName}\"";
-        return File(fileBytes, document.ContentType);
+        return File(content, document.ContentType);
     }
 
     [HttpPost]

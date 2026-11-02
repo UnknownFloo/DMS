@@ -39,6 +39,10 @@ class PaperlessApi {
         return this.request('GET', '/documents');
     }
 
+    searchDocuments(query) {
+        return this.request('GET', `/documents/search?q=${encodeURIComponent(query)}`);
+    }
+
     getDocument(id) {
         return this.request('GET', `/documents/${id}`);
     }

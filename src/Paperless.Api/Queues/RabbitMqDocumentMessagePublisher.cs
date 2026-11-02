@@ -7,7 +7,7 @@ namespace Paperless.Api.Queues;
 
 public interface IRabbitMqDocumentMessagePublisher
 {
-    void PublishDocumentUploaded(Guid documentId, string fileName, string? description = null);
+    void PublishDocumentUploaded(Guid documentId, string fileName, string? description = null, string? storagePath = null);
 }
 
 public sealed class RabbitMqDocumentMessagePublisher : IRabbitMqDocumentMessagePublisher, IDisposable
@@ -55,7 +55,7 @@ public sealed class RabbitMqDocumentMessagePublisher : IRabbitMqDocumentMessageP
         }
     }
 
-    public void PublishDocumentUploaded(Guid documentId, string fileName, string? description = null)
+    public void PublishDocumentUploaded(Guid documentId, string fileName, string? description = null, string? storagePath = null)
     {
         if (_channel is null)
         {
@@ -70,6 +70,7 @@ public sealed class RabbitMqDocumentMessagePublisher : IRabbitMqDocumentMessageP
                 documentId,
                 fileName,
                 description,
+                storagePath,
                 eventType = "document.uploaded",
                 createdAtUtc = DateTime.UtcNow
             };

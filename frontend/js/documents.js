@@ -24,7 +24,9 @@ function renderDocuments(docs) {
         return;
     }
 
-    container.innerHTML = docs.map(doc => `
+    container.innerHTML = docs.map(doc => {
+        const uploadedAt = doc.uploadedAtUtc ? new Date(doc.uploadedAtUtc).toLocaleDateString() : '';
+        return `
         <a href="document-detail.html?id=${doc.id}" class="card">
             <div class="card-header">
                 <div style="width: 100%;">
@@ -35,20 +37,34 @@ function renderDocuments(docs) {
                 <div class="card-text">${escape(doc.description || 'No description')}</div>
             </div>
             <div class="card-footer">
-                <span class="card-meta">${new Date(doc.uploadedAtUtc).toLocaleDateString()}</span>
+                ${uploadedAt ? `<span class="card-meta">${uploadedAt}</span>` : ''}
             </div>
         </a>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function setupSearch() {
     const input = document.getElementById('searchInput');
-    input.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allDocs.filter(doc =>
-            doc.fileName.toLowerCase().includes(term) ||
-            (doc.description && doc.description.toLowerCase().includes(term))
-        );
-        renderDocuments(filtered);
+    let debounceTimer;
+    let searchSequence = 0;
+    input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            const query = input.value.trim();
+            const sequence = ++searchSequence;
+            if (!query) {
+                renderDocuments(allDocs);
+                return;
+            }
+            try {
+                const results = await api.searchDocuments(query);
+                if (sequence === searchSequence) renderDocuments(results);
+            } catch (error) {
+                if (sequence === searchSequence) {
+                    document.getElementById('documentsList').innerHTML = '<div class="alert alert-error">Search is temporarily unavailable</div>';
+                }
+            }
+        }, 250);
     });
 }
