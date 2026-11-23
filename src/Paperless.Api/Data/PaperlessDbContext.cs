@@ -3,6 +3,9 @@ using Paperless.Api.Entities;
 
 namespace Paperless.Api.Data;
 
+//: ======================================================================
+//: EF Core database context for documents, collections, tags, and memberships.
+//: ======================================================================
 public class PaperlessDbContext(DbContextOptions<PaperlessDbContext> options) : DbContext(options)
 {
     public DbSet<Document> Documents => Set<Document>();
@@ -13,6 +16,7 @@ public class PaperlessDbContext(DbContextOptions<PaperlessDbContext> options) : 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Document metadata and extracted content are stored with the main record.
         modelBuilder.Entity<Document>(entity =>
         {
             entity.HasKey(x => x.Id);
@@ -20,8 +24,11 @@ public class PaperlessDbContext(DbContextOptions<PaperlessDbContext> options) : 
             entity.Property(x => x.ContentType).HasMaxLength(100).IsRequired();
             entity.Property(x => x.StoragePath).HasMaxLength(500).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(2000);
+            entity.Property(x => x.Summary).HasMaxLength(10000);
+            entity.Property(x => x.OcrText).HasMaxLength(100000);
         });
 
+        // Tags use a join table; collection membership has its own timestamped join.
         modelBuilder.Entity<Tag>(entity =>
         {
             entity.HasKey(x => x.Id);

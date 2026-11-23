@@ -1,6 +1,12 @@
 namespace Paperless.Api.Entities;
 
-/// <summary>Additional Sprint-1 use case: user-defined collections for grouping documents.</summary>
+//: ======================================================================
+//: Persistence entity for named document collections.
+//: ======================================================================
+
+// ############################
+// A user-defined group for organizing documents.
+// ############################
 public class Collection
 {
     public Guid Id { get; set; }

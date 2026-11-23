@@ -2,6 +2,9 @@ using Paperless.Api.Entities;
 
 namespace Paperless.Api.Repositories;
 
+// ############################
+// Persistence operations required by document workflows.
+// ############################
 public interface IDocumentRepository
 {
     Task<Document?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

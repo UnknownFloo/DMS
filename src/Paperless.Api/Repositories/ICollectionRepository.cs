@@ -2,6 +2,9 @@ using Paperless.Api.Entities;
 
 namespace Paperless.Api.Repositories;
 
+// ############################
+// Persistence operations required by collection workflows.
+// ############################
 public interface ICollectionRepository
 {
     Task<Collection?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

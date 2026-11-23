@@ -1,0 +1,10 @@
+{
+  "name": "Paperless Document Management",
+  "short_name": "Paperless",
+  "description": "OCR, AI summaries and document management",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#f8f5ee",
+  "theme_color": "#3d7347",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

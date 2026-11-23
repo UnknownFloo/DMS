@@ -7,8 +7,15 @@ using Paperless.Api.Repositories;
 
 namespace Paperless.Api.Services;
 
+//: ======================================================================
+//: Manages collections and their document associations.
+//: ======================================================================
 public class CollectionService(ICollectionRepository collections, PaperlessDbContext db)
 {
+    //: ======================================================================
+    //: COLLECTION METADATA
+    //: ======================================================================
+    //* Creates a collection and normalizes its name and description.
     public async Task<CollectionResponse> CreateAsync(CreateCollectionRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Name)) throw new ArgumentException("Name is required.", nameof(request.Name));
@@ -24,15 +31,18 @@ public class CollectionService(ICollectionRepository collections, PaperlessDbCon
         return ToResponse(entity);
     }
 
+    //* Loads every collection and maps it to an API response.
     public async Task<IReadOnlyList<CollectionResponse>> GetAllAsync(CancellationToken ct) =>
         (await collections.GetAllAsync(ct)).Select(ToResponse).ToArray();
 
+    //* Returns one collection or null when it does not exist.
     public async Task<CollectionResponse?> GetAsync(Guid id, CancellationToken ct)
     {
         var entity = await collections.GetByIdAsync(id, ct);
         return entity is null ? null : ToResponse(entity);
     }
 
+    //* Deletes a collection only after verifying that it exists.
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct)
     {
         var entity = await collections.GetByIdAsync(id, ct);
@@ -43,6 +53,10 @@ public class CollectionService(ICollectionRepository collections, PaperlessDbCon
         return true;
     }
 
+    //: ======================================================================
+    //: DOCUMENT MEMBERSHIP
+    //: ======================================================================
+    //* Adds an association only when both records exist and the combination is not already present.
     public async Task<bool> AddDocumentAsync(Guid collectionId, Guid documentId, CancellationToken ct)
     {
         var collectionExists = await db.Collections.AnyAsync(x => x.Id == collectionId, ct);
@@ -57,6 +71,7 @@ public class CollectionService(ICollectionRepository collections, PaperlessDbCon
         return true;
     }
 
+    //* Returns associated documents in newest-association-first order.
     public async Task<IReadOnlyList<DocumentResponse>> GetDocumentsAsync(Guid collectionId, CancellationToken ct)
     {
         var documents = await db.CollectionDocuments
@@ -71,6 +86,7 @@ public class CollectionService(ICollectionRepository collections, PaperlessDbCon
         return documents.Select(DocumentMapper.ToResponse).ToArray();
     }
 
+    //* Removes one document-to-collection association.
     public async Task<bool> RemoveDocumentAsync(Guid collectionId, Guid documentId, CancellationToken ct)
     {
         var association = await db.CollectionDocuments.FirstOrDefaultAsync(x => x.CollectionId == collectionId && x.DocumentId == documentId, ct);
@@ -81,5 +97,6 @@ public class CollectionService(ICollectionRepository collections, PaperlessDbCon
         return true;
     }
 
+    //* Converts an entity to the public API response format.
     private static CollectionResponse ToResponse(Collection entity) => new(entity.Id, entity.Name, entity.Description, entity.CreatedAtUtc, entity.Documents.Count);
 }

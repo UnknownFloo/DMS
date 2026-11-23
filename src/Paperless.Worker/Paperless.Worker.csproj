@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <!-- ############################
+       OCR worker executable target and compilation defaults.
+       ############################ -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,6 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- ############################
+       Object storage and queue clients used by the upload pipeline.
+       ############################ -->
   <ItemGroup>
     <PackageReference Include="Minio" Version="6.0.4" />
     <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />

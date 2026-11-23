@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PDF bearbeiten - Paperless</title>
+  <link rel="stylesheet" href="../css/common.css">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <style>
+    body{overflow:hidden}.editor-head{display:flex;align-items:center;justify-content:space-between;gap:1rem}.editor-status{padding:.5rem 0;color:#435143;font-size:.9rem}.editor-stage{height:calc(100vh - 150px);overflow:auto;background:#e7ebe4;border-radius:16px;padding:24px;text-align:center}.pdf-page{position:relative;display:block;margin:0 auto 24px;background:#fff;box-shadow:0 10px 30px #18271824}.pdf-page canvas{display:block}.text-layer{position:absolute;inset:0}.edit-region{position:absolute;box-sizing:border-box;min-width:8px;min-height:8px;border:1px dashed #377bd3;background:#4389e81a;cursor:text;overflow:hidden;text-align:left;color:transparent;white-space:pre}.edit-region:hover{background:#4389e832;border-color:#1d63b5}.edit-region.is-editing{z-index:2;border:1px solid #2563eb;background:#ffffffeb;color:#202820;outline:2px solid #2563eb33}.edit-region textarea{display:block;box-sizing:border-box;width:100%;height:100%;min-height:1.4em;resize:none;border:0;outline:0;padding:0 2px;margin:0;background:transparent;color:#202820;font:inherit;line-height:1.08;overflow:hidden}.toolbar-note{font-size:.86rem;color:#657164;margin:.4rem 0 .7rem}@media(max-width:700px){body{overflow:auto}.editor-stage{height:70vh;padding:12px}.editor-head{align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <!-- ############################
+     Compact editor header with status and save action.
+     ############################ -->
+  <header class="workspace-header"><div class="container shell-bar editor-head">
+    <div class="brand-cluster"><div class="brand-mark">P</div><div class="brand-copy"><span class="eyebrow">Dokumente</span><strong>PDF bearbeiten</strong></div></div>
+    <button id="savePdf" class="mini-cta" disabled>PDF speichern</button>
+  </div></header>
+  <!-- ############################
+     PDF pages and inline text regions are rendered into this stage.
+     ############################ -->
+  <main><div class="container">
+    <div class="editor-status" id="editorStatus" role="status">PDF wird geladen…</div>
+    <p class="toolbar-note">Blau markierte Textstelle anklicken und direkt losschreiben.</p>
+    <section class="editor-stage" id="editorStage" aria-label="PDF-Seiten"></section>
+  </div></main>
+  <!-- ############################
+     PDF rendering, PDF export, and OCR libraries used by the editor.
+     ############################ -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="../js/api-client.js"></script>
+  <script src="../js/pdf-editor.js"></script>
+</body>
+</html>

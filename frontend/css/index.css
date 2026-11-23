@@ -1,9 +1,14 @@
-/* ===== index.css ===== */
-/* Styles specific to the homepage (index.html) */
+/* ############################
+   index.css — Styles specific to the homepage (index.html)
+   ############################ */
 
+
+/* ############################
+   Hero content and dashboard metrics.
+   ############################ */
 .hero-panel {
     display: grid;
-    grid-template-columns: 1.3fr 0.7fr;
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
     gap: 1.5rem;
     align-items: center;
     margin-bottom: 2rem;
@@ -14,28 +19,47 @@
     box-shadow: var(--shadow-soft);
 }
 
-.hero-content { position: relative; z-index:1; }
+.hero-content { position: relative; z-index:1; min-width:0; }
 .hero-kicker { display:inline-flex; align-items:center; padding:0.4rem 0.8rem; border-radius:999px; background: rgba(94,143,88,0.08); border:1px solid rgba(61,111,69,0.12); color:var(--primary-deep); font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; font-weight:700; }
 .hero-content h2 { margin:0.9rem 0 0.8rem; font-size:clamp(2.2rem,3vw,3rem); line-height:1.06; letter-spacing:-0.06em; color:var(--ink); }
 .hero-content p { max-width:580px; color:var(--ink-soft); font-size:1rem; }
 .hero-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:1.2rem; }
 
-.hero-metrics { display:grid; grid-template-columns: repeat(2, minmax(120px,1fr)); gap:1rem; align-content:center; position:relative; z-index:1; }
+.hero-metrics { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:1rem; align-content:center; min-width:0; position:relative; z-index:1; }
 .metric-box { background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(248,245,240,0.95)); border:1px solid var(--line); border-radius:20px; padding:1rem; min-height:160px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:var(--shadow-soft); animation: floatSoft 6s ease-in-out infinite; }
+.metric-box > div { display:flex; flex-direction:column; line-height:1.15; }
+.metric-box strong { font-size:2.25rem; color:var(--ink); }
+.metric-box strong + span { margin-top:0.35rem; color:var(--muted); }
 .metric-pill { display:inline-flex; align-self:flex-start; padding:0.35rem 0.65rem; border-radius:999px; background: rgba(47,125,74,0.08); border:1px solid rgba(47,125,74,0.12); color:var(--success); font-size:0.72rem; font-weight:700; }
 
+/* ############################
+   Full-text search results and responsive dashboard layout.
+   ############################ */
 .home-search { margin: 0 0 2rem; padding: 1.25rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .home-search label { display: block; margin-bottom: 0.65rem; color: var(--ink); font-weight: 700; }
 .home-search-controls { display: flex; gap: 0.6rem; }
-.home-search-controls input { flex: 1; min-width: 0; padding: 0.8rem 0.9rem; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,0.82); color: var(--ink); font: inherit; }
+.home-search-controls input { flex: 1; min-width: 0; padding: 0.8rem 0.9rem; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.82); color: var(--ink); font: inherit; }
 .home-search-results { display: grid; gap: 0.5rem; margin-top: 0.65rem; color: var(--ink-soft); }
 .home-search-result { display: flex; justify-content: space-between; gap: 1rem; padding: 0.65rem 0; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
 .home-search-result strong { color: var(--ink); }
 .home-search-result:hover strong { color: var(--primary-deep); }
 
+@media (max-width: 900px) {
+    .hero-panel { grid-template-columns: 1fr; }
+    .hero-metrics { max-width:520px; width:100%; }
+}
+
 @media (max-width: 560px) {
+    main { padding-top: 18px; }
+    .container { padding-left: 14px; padding-right: 14px; }
+    .hero-panel { padding: 1.25rem; border-radius: 20px; }
+    .hero-content h2 { font-size:2.05rem; }
+    .hero-actions .btn { width:100%; }
+    .hero-metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .metric-box { min-height:130px; }
     .home-search-controls { align-items: stretch; flex-direction: column; }
+    .home-search-controls .btn { width:100%; }
     .home-search-result { align-items: flex-start; flex-direction: column; gap: 0.2rem; }
 }
 
-/* end index.css */
+/* ############################ end index.css ############################ */

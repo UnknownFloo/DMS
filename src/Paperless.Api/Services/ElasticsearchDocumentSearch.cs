@@ -3,8 +3,12 @@ using System.Text.Json;
 
 namespace Paperless.Api.Services;
 
+//: ======================================================================
+//: Searches indexed filenames, descriptions, and OCR text in Elasticsearch.
+//: ======================================================================
 public sealed class ElasticsearchDocumentSearch(HttpClient httpClient)
 {
+    //* Runs a multi-field search and maps Elasticsearch hits to API results.
     public async Task<IReadOnlyList<DocumentSearchResult>> SearchAsync(string query, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query)) return Array.Empty<DocumentSearchResult>();
@@ -37,4 +41,5 @@ public sealed class ElasticsearchDocumentSearch(HttpClient httpClient)
     }
 }
 
+// Small result shape returned to the document search page.
 public sealed record DocumentSearchResult(Guid Id, string FileName, string? Description);

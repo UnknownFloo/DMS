@@ -1,5 +1,12 @@
 namespace Paperless.Api.Entities;
 
+//: ======================================================================
+//: Persistence entity for document labels.
+//: ======================================================================
+
+// ############################
+// A reusable label that can be attached to multiple documents.
+// ############################
 public class Tag
 {
     public Guid Id { get; set; }

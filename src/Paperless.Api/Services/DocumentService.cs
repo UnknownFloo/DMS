@@ -5,8 +5,9 @@ using Paperless.Api.Queues;
 using Paperless.Api.Repositories;
 using Paperless.Api.Storage;
 
-namespace Paperless.Api.Services;
-
+//: ======================================================================
+//: Coordinates document metadata, file storage, OCR messages, and summary updates.
+//: ======================================================================
 public class DocumentService(
     IDocumentRepository documents,
     DocumentStorageOptions? storageOptions = null,
@@ -18,6 +19,11 @@ public class DocumentService(
     private readonly IDocumentStorage _documentStorage = documentStorage ?? new LocalDocumentStorage(
         storageOptions?.RootPath ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "Uploads"));
 
+    //: ======================================================================
+    //* Metadata-only creation
+    //: ======================================================================
+
+    //* Create a metadata-only record, including any requested tags.
     public async Task<DocumentResponse> CreateAsync(CreateDocumentRequest request, CancellationToken ct)
     {
         ValidateName(request.FileName);
@@ -42,6 +48,7 @@ public class DocumentService(
         return DocumentMapper.ToResponse(document);
     }
 
+    //* Returns one document or null when it does not exist.
     public async Task<DocumentResponse?> GetAsync(Guid id, CancellationToken ct)
     {
         var document = await documents.GetByIdAsync(id, ct);
@@ -83,6 +90,7 @@ public class DocumentService(
         return true;
     }
 
+    //* File storage and OCR handoff
     public async Task<DocumentResponse> UploadFileAsync(IFormFile file, string description, CancellationToken ct)
     {
         if (file == null || file.Length == 0)
@@ -119,6 +127,33 @@ public class DocumentService(
         return DocumentMapper.ToResponse(document);
     }
 
+    //* OCR and AI result updates
+    public async Task<DocumentResponse?> UpdateSummaryAsync(Guid id, string? summary, CancellationToken ct)
+    {
+        var document = await documents.GetByIdAsync(id, ct);
+        if (document is null) return null;
+        document.Summary = string.IsNullOrWhiteSpace(summary) ? null : summary.Trim();
+        document.UpdatedAtUtc = DateTime.UtcNow;
+        await documents.SaveChangesAsync(ct);
+        return DocumentMapper.ToResponse(document);
+    }
+
+    public async Task<bool> UpdateOcrTextAsync(Guid id, string? text, CancellationToken ct)
+    {
+        var document = await documents.GetByIdAsync(id, ct);
+        if (document is null) return false;
+        document.OcrText = text;
+        await documents.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<(bool Found, string? OcrText)> GetOcrTextAsync(Guid id, CancellationToken ct)
+    {
+        var document = await documents.GetByIdAsync(id, ct);
+        return document is null ? (false, null) : (true, document.OcrText);
+    }
+
+    //* Shared validation and storage-key helpers
     private static string GetStoragePath(Guid documentId, string fileName)
     {
         var safeFileName = Path.GetFileName(fileName);

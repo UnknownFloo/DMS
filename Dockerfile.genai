@@ -1,0 +1,16 @@
+# ############################
+# Build the GenAI summary worker.
+# ############################
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore src/Paperless.GenAI/Paperless.GenAI.csproj
+RUN dotnet publish src/Paperless.GenAI/Paperless.GenAI.csproj -c Release -o /app/publish --no-restore
+
+# ############################
+# Run the published worker that calls configured AI providers.
+# ############################
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "Paperless.GenAI.dll"]

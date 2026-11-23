@@ -1,5 +1,7 @@
-/* ===== collections.css ===== */
-/* Styles specific to collections pages and modals */
+/* ############################
+   collections.css — Styles specific to collections pages and modals
+   ############################ */
+
 
 .collection-card-shell { display:flex; flex-direction:column; height:100%; padding:1.1rem 1.1rem 0.9rem; }
 .collection-card-top { display:flex; justify-content:space-between; align-items:center; gap:0.8rem; margin-bottom:0.8rem; }
@@ -24,4 +26,4 @@
 .collection-doc-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.95rem 1rem; border-radius:16px; border:1px solid rgba(31,52,35,0.1); background: rgba(255,255,255,0.9); box-shadow:var(--shadow-soft); }
 .collection-empty-state { display:flex; align-items:center; justify-content:center; min-height:110px; border:1px dashed rgba(63,111,65,0.2); border-radius:16px; background: rgba(94,143,88,0.03); color:var(--ink-soft); font-weight:600; }
 
-/* end collections.css */
+/* ############################ end collections.css ############################ */

@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <!-- ############################
+       Worker executable target and compilation defaults.
+       ############################ -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,6 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- ############################
+       RabbitMQ client used to receive OCR results.
+       ############################ -->
   <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
   </ItemGroup>

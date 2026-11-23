@@ -3,6 +3,9 @@ using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
+// ############################
+// Consume OCR results and keep their searchable fields in Elasticsearch.
+// ############################
 const string queueName = "document-ocr-completed";
 var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
 var rabbitPort = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var parsedPort) ? parsedPort : 5672;
@@ -26,6 +29,7 @@ await channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, auto
 await channel.BasicQosAsync(0, 1, false);
 Console.WriteLine($"Indexer listening on RabbitMQ {rabbitHost}:{rabbitPort} / queue {queueName}; Elasticsearch {elasticsearchUrl}");
 
+// Index successful OCR events and requeue the message if Elasticsearch rejects it.
 var consumer = new AsyncEventingBasicConsumer(channel);
 consumer.ReceivedAsync += async (_, eventArgs) =>
 {
