@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Paperless DMS",
+    "slug": "paperless-dms-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f5f1e8"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
+    },
+    "android": {
+      "usesCleartextTraffic": true,
+      "package": "at.paperless.dms"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}

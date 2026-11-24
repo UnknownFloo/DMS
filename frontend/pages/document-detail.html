@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3d7347">
     <title>Document - Paperless</title>
     <link rel="stylesheet" href="../css/style.css"> <!-- legacy fallback for older UI builds -->
     <link rel="stylesheet" href="../css/common.css">
@@ -140,5 +142,6 @@
     <!--: ============================================================= -->
     <script src="../js/api-client.js"></script>
     <script src="../js/document-detail.js"></script>
+    <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => {});</script>
 </body>
 </html>

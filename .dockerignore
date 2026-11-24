@@ -1,7 +1,13 @@
 .git
+.aws/
+.agents/
+.codex/
 .gitignore
 .vscode
 .idea
+.env
+.env.*
+!.env.example
 README.md
 *.md
 !Dockerfile*
@@ -12,3 +18,7 @@ packages/
 .vs/
 .vscode/
 node_modules/
+mobile/.expo/
+mobile/dist/
+*.zip
+semester-project.pdf
