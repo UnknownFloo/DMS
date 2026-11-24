@@ -34,5 +34,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="../js/api-client.js"></script>
   <script src="../js/pdf-editor.js"></script>
+    <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => {});</script>
 </body>
 </html>
