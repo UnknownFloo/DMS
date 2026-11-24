@@ -1,4 +1,6 @@
-// Documents list page
+// ############################
+// Document listing, rendering, and search behavior.
+// ############################
 document.addEventListener('DOMContentLoaded', () => {
     loadDocuments();
     setupSearch();
@@ -6,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let allDocs = [];
 
+// Keep the original list so clearing search restores all documents.
 async function loadDocuments() {
     const container = document.getElementById('documentsList');
     try {
@@ -16,6 +19,7 @@ async function loadDocuments() {
     }
 }
 
+// Render the supplied list of documents, including the empty state.
 function renderDocuments(docs) {
     const container = document.getElementById('documentsList');
     
@@ -44,6 +48,7 @@ function renderDocuments(docs) {
     }).join('');
 }
 
+// Debounce input and ignore stale responses when queries overlap.
 function setupSearch() {
     const input = document.getElementById('searchInput');
     let debounceTimer;

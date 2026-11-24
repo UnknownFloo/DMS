@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="../css/collections.css">
 </head>
 <body>
+    <!--: =========================================================== -->
+    <!--: Shared navigation and workspace actions.                    -->
+    <!--: =========================================================== -->
     <header class="workspace-header">
         <div class="container shell-bar">
             <div class="brand-cluster">
@@ -33,6 +36,9 @@
         </div>
     </header>
 
+    <!-- ############################
+     Collection cards are populated from the API.
+     ############################ -->
     <main>
         <div class="container">
             <div class="page-header">
@@ -49,7 +55,9 @@
         </div>
     </main>
 
-    <!-- Create Collection Modal -->
+    <!-- ############################
+     Dialog for creating a collection.
+     ############################ -->
     <div id="createCollectionModal" class="modal-overlay" aria-hidden="true">
         <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="createCollectionTitle">
             <div class="collection-modal-header">
@@ -105,7 +113,9 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- ############################
+     Dialog for confirming collection deletion.
+     ############################ -->
     <div id="deleteCollectionModal" class="modal-overlay" aria-hidden="true">
         <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteCollectionTitle">
             <div class="collection-modal-header">
@@ -131,11 +141,20 @@
         </div>
     </div>
 
+    <!-- ############################
+     Collection page data, modal actions, and membership updates.
+     ############################ -->
     <script src="../js/api-client.js"></script>
     <script>
+        // Current page state shared by the collection cards and detail dialog.
         let collections = [];
         let activeCollectionId = null;
 
+        // ############################
+
+        // Collection creation dialog
+
+        // ############################
         function openCreateCollectionModal() {
             const modal = document.getElementById('createCollectionModal');
             modal.classList.add('visible');
@@ -152,6 +171,7 @@
             document.getElementById('collectionNameHint').textContent = '0/150';
         }
 
+        // Keep the visible name counter in sync with the API length limit.
         const nameInput = document.getElementById('collectionName');
         const nameHint = document.getElementById('collectionNameHint');
         if (nameInput && nameHint) {
@@ -160,6 +180,11 @@
             });
         }
 
+        // ############################
+
+        // Collection list loading and rendering
+
+        // ############################
         async function loadCollections() {
             try {
                     const response = await fetch('/api/collections');
@@ -225,6 +250,11 @@
             });
         }
 
+        // ############################
+
+        // Collection detail and document membership
+
+        // ############################
         async function viewCollection(id) {
             activeCollectionId = id;
             const collection = collections.find(col => col.id === id);
@@ -356,6 +386,11 @@
             }
         }
 
+        // ############################
+
+        // Create and delete requests
+
+        // ############################
         async function createCollection(event) {
             event.preventDefault();
             const name = document.getElementById('collectionName').value.trim();
@@ -402,7 +437,7 @@
             }
         }
 
-        // Modal-driven delete flow
+        // Show the confirmation dialog before deleting a collection.
         function openDeleteCollectionModal(id) {
             const modal = document.getElementById('deleteCollectionModal');
             const col = collections.find(c => c.id === id) || { name: '' };
@@ -439,6 +474,11 @@
             }
         }
 
+        // ############################
+
+        // Page feedback and safe text escaping
+
+        // ############################
         function showAlert(message, type) {
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;

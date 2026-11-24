@@ -6,8 +6,19 @@
     <title>Paperless - Document Management</title>
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/index.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="Track, organize and review your documents in one focused workspace built for speed.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/android-chrome-512x512.png">
 </head>
 <body>
+    <!-- ############################
+     Shared navigation and workspace actions.
+     ############################ -->
     <header class="workspace-header">
         <div class="container shell-bar">
             <div class="brand-cluster">
@@ -23,15 +34,19 @@
                 <a href="pages/upload.html">Upload</a>
                 <a href="pages/documents.html">Documents</a>
                 <a href="pages/collections.html">Collections</a>
+                <a href="pages/genai-settings.html">AI Settings</a>
             </nav>
 
             <div class="top-actions">
-                <button class="status-pill" type="button"><span class="status-dot"></span>Ready</button>
+                <span class="status-pill"><span class="status-dot"></span>Ready</span>
                 <a href="pages/upload.html" class="mini-cta">New Doc</a>
             </div>
         </div>
     </header>
 
+    <!-- ############################
+     Dashboard summary, recent documents, and full-text search.
+     ############################ -->
     <main>
         <div class="container">
             <section class="hero-panel">
@@ -86,7 +101,21 @@
         </div>
     </main>
 
+    <!-- ############################
+     Shared API access is loaded before page-specific dashboard behavior.
+     ############################ -->
     <script src="js/api-client.js?v=20261102"></script>
     <script src="js/dashboard.js?v=20261102"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }, function(err) {
+                    console.log('Service Worker registration failed:', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>

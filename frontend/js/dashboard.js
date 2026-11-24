@@ -1,10 +1,13 @@
-// Dashboard
+// ############################
+// Dashboard data loading and home-page document search.
+// ############################
 document.addEventListener('DOMContentLoaded', () => {
     loadStats();
     loadRecentDocs();
     setupHomeSearch();
 });
 
+// Debounce searches and discard responses from older requests.
 function setupHomeSearch() {
     const form = document.getElementById('homeSearchForm');
     const input = document.getElementById('homeSearchInput');
@@ -41,6 +44,7 @@ function setupHomeSearch() {
     });
 }
 
+// Build search results with DOM nodes so document text stays plain text.
 function renderHomeSearchResults(container, documents) {
     container.replaceChildren();
     if (!documents.length) {
@@ -62,6 +66,7 @@ function renderHomeSearchResults(container, documents) {
     }
 }
 
+// Populate the dashboard counts and recent document cards.
 async function loadStats() {
     try {
         const docs = await api.getDocuments();

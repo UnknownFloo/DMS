@@ -1,5 +1,8 @@
 namespace Paperless.Api.Storage;
 
+// ############################
+// File-system implementation used for local runs and lightweight development.
+// ############################
 public sealed class LocalDocumentStorage(string rootPath) : IDocumentStorage
 {
     public async Task PutAsync(string key, Stream content, long size, string contentType, CancellationToken cancellationToken)

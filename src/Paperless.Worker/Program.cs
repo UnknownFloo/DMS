@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Minio;
@@ -6,8 +7,12 @@ using Minio.DataModel.Args;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
+// ############################
+// Queue names form the message contract between the API and background services.
+// ############################
 const string uploadQueue = "document-uploaded";
 const string ocrQueue = "document-ocr-completed";
+const string genAiQueue = "document-genai-request";
 var host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
 var port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var parsedPort) ? parsedPort : 5672;
 var user = Environment.GetEnvironmentVariable("RABBITMQ_USERNAME") ?? "guest";
@@ -17,7 +22,9 @@ var storageAccessKey = Environment.GetEnvironmentVariable("OBJECT_STORAGE_ACCESS
 var storageSecretKey = Environment.GetEnvironmentVariable("OBJECT_STORAGE_SECRET_KEY") ?? "paperless-secret-key";
 var storageBucket = Environment.GetEnvironmentVariable("OBJECT_STORAGE_BUCKET") ?? "paperless-documents";
 var storageUseSsl = string.Equals(Environment.GetEnvironmentVariable("OBJECT_STORAGE_USE_SSL"), "true", StringComparison.OrdinalIgnoreCase);
+var apiUrl = Environment.GetEnvironmentVariable("PAPERLESS_API_URL") ?? "http://api:8080";
 
+// Connect to RabbitMQ and object storage once, then reuse them for each upload.
 var factory = new ConnectionFactory { HostName = host, Port = port, UserName = user, Password = password };
 using var connection = await factory.CreateConnectionAsync();
 await using var channel = await connection.CreateChannelAsync();
@@ -29,10 +36,12 @@ var storage = new MinioClient()
 
 await channel.QueueDeclareAsync(uploadQueue, durable: true, exclusive: false, autoDelete: false, arguments: null);
 await channel.QueueDeclareAsync(ocrQueue, durable: true, exclusive: false, autoDelete: false, arguments: null);
+await channel.QueueDeclareAsync(genAiQueue, durable: true, exclusive: false, autoDelete: false, arguments: null);
 await channel.BasicQosAsync(0, 1, false);
 
 Console.WriteLine($"OCR worker listening on RabbitMQ {host}:{port} / queue {uploadQueue}");
 
+// Process one upload at a time: OCR, publish downstream events, then acknowledge.
 var consumer = new AsyncEventingBasicConsumer(channel);
 consumer.ReceivedAsync += async (_, eventArgs) =>
 {
@@ -43,10 +52,18 @@ consumer.ReceivedAsync += async (_, eventArgs) =>
         if (string.IsNullOrWhiteSpace(message.StoragePath))
             throw new InvalidDataException($"Upload message for {message.DocumentId} has no storage path.");
 
-        var text = await RecognizePdfAsync(storage, storageBucket, message.StoragePath, CancellationToken.None);
+        var text = await RecognizeDocumentAsync(storage, storageBucket, message.StoragePath, message.FileName, CancellationToken.None);
         var result = new OcrCompletedMessage(message.DocumentId, message.FileName, message.Description, text);
         var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(result, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         await channel.BasicPublishAsync(string.Empty, ocrQueue, false, new BasicProperties { Persistent = true }, body, CancellationToken.None);
+
+        // Publish to GenAI queue
+        var genAiBody = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { message.DocumentId, message.FileName, TextContent = text }, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+        await channel.BasicPublishAsync(string.Empty, genAiQueue, false, new BasicProperties { Persistent = true }, genAiBody, CancellationToken.None);
+
+        using var apiClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        await apiClient.PutAsJsonAsync($"{apiUrl.TrimEnd('/')}/api/documents/{message.DocumentId:D}/ocr-text", new { text });
+
         await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false);
         Console.WriteLine($"[ocr] Recognized {message.FileName} ({text.Length} characters).");
     }
@@ -68,6 +85,44 @@ Console.CancelKeyPress += (_, eventArgs) =>
 };
 await Task.Delay(Timeout.Infinite, stopping.Token);
 
+// Route supported uploads to the image or PDF OCR pipeline.
+static async Task<string> RecognizeDocumentAsync(IMinioClient storage, string bucket, string storagePath, string fileName, CancellationToken cancellationToken)
+{
+    var extension = Path.GetExtension(fileName).ToLowerInvariant();
+    if (extension == ".pdf")
+        return await RecognizePdfAsync(storage, bucket, storagePath, cancellationToken);
+
+    var imageExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"
+    };
+    if (!imageExtensions.Contains(extension))
+        throw new InvalidDataException($"Unsupported OCR file type: {extension}");
+
+    var workingDirectory = Path.Combine(Path.GetTempPath(), $"paperless-image-ocr-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(workingDirectory);
+    var imagePath = Path.Combine(workingDirectory, $"document{extension}");
+    try
+    {
+        await using var image = File.Create(imagePath);
+        await storage.GetObjectAsync(new GetObjectArgs()
+            .WithBucket(bucket)
+            .WithObject(storagePath)
+            .WithCallbackStream(stream => stream.CopyTo(image)), cancellationToken);
+
+        var result = await RunProcessAsync("tesseract", [imagePath, "stdout", "-l", "eng+deu", "--psm", "6"], cancellationToken);
+        var text = result.Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            throw new InvalidDataException("Tesseract did not recognize text in the image.");
+        return text;
+    }
+    finally
+    {
+        Directory.Delete(workingDirectory, recursive: true);
+    }
+}
+
+// Render PDF pages to temporary images before recognizing each page with Tesseract.
 static async Task<string> RecognizePdfAsync(IMinioClient storage, string bucket, string storagePath, CancellationToken cancellationToken)
 {
     var workingDirectory = Path.Combine(Path.GetTempPath(), $"paperless-ocr-{Guid.NewGuid():N}");
@@ -107,6 +162,7 @@ static async Task<string> RecognizePdfAsync(IMinioClient storage, string bucket,
     }
 }
 
+// Run OCR/rendering tools without a shell and return their captured standard output.
 static async Task<string> RunProcessAsync(string executable, IEnumerable<string> arguments, CancellationToken cancellationToken)
 {
     var startInfo = new ProcessStartInfo(executable)

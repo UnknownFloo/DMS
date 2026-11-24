@@ -1,255 +1,140 @@
 # Paperless DMS
 
-Project overview for the SWEN3 semester project. The project is split into sprint-based milestones and follows the required architecture of REST API + database + web frontend + message queue.
+Paperless DMS is a document management system built for the SWEN3 semester project. It combines a browser interface, a REST API, PostgreSQL metadata, S3-compatible file storage, background OCR, full-text search, and optional AI-generated summaries.
 
-## Sprint 1 – Project setup, REST API, DAL
+## Sprint 5
 
-### Goal
-- .NET/C# project setup
-- REST API with code-first endpoints
-- PostgreSQL persistence with Entity Framework Core
-- Repository pattern
-- Unit tests with mocked repository layer
-- Docker Compose for API + database
-- Additional use case: Collections
+Sprint 5 completes the document editing and AI-summary workflows:
 
-### Architecture
-`Controller -> Service -> Repository -> EF Core DbContext -> PostgreSQL`
+- Edit existing PDF text in the browser. Scanned pages use OCR to identify editable text regions.
+- Recognize and edit text in scanned images, with recognized regions highlighted in the editor.
+- Save PDF and image edits as separate copies so the uploaded original stays intact.
+- Run OCR and update the search index for edited copies after saving.
+- Configure Gemini or an OpenAI-compatible local provider and regenerate summaries with a selected output style and optional instructions.
+- Format summaries in the document overview and ignore stale search-index hits whose document records no longer exist.
+- Add clear English section comments across the application source and deployment files.
 
-### Main entities
-- `Document`
-- `Tag`
-- `DocumentTag`
-- `Collection`
-- `CollectionDocument`
+## Architecture
 
-### Run Sprint 1 locally
-```bash
-cd /home/roberto/Downloads/SWEN_3/DMS
-dotnet restore Paperless.sln
-dotnet build Paperless.sln -nologo
-dotnet test Paperless.sln -nologo
-```
-
-### Docker for Sprint 1
-```bash
-docker compose build
-docker compose up -d
-```
-
-### Sprint 1 endpoints
-- `GET /api/documents`
-- `GET /api/documents/{id}`
-- `POST /api/documents`
-- `PUT /api/documents/{id}`
-- `DELETE /api/documents/{id}`
-
-### Additional use case: Collections
-- `GET /api/collections`
-- `GET /api/collections/{id}`
-- `POST /api/collections`
-- `POST /api/collections/{id}/documents`
-
----
-
-## Sprint 2 – Web UI
-
-### Goal
-- Web server service (Nginx)
-- UI served from static frontend files
-- Dashboard and detail pages served by the webserver
-- Frontend communication with REST API
-- Docker Compose extended with UI container
-
-### Frontend
-The frontend is served from the `frontend/` directory through the `ui` container.
-
-### Start Sprint 2 stack
-```bash
-docker compose up -d --build
-```
-
-### Frontend URLs
-- Frontend: http://localhost/
-- API Swagger: http://localhost:8080/swagger
-- API health: http://localhost:8080/health
-
-### Useful checks
-```bash
-curl -f http://localhost/
-curl -f http://localhost/api/health
-```
-
-### Notes
-- The frontend uses relative API requests (`/api`) so it can work through the Nginx proxy.
-- Static files are served by Nginx and cached with header settings in `nginx.conf`.
-
----
-
-## Sprint 3 – RabbitMQ / queue integration
-
-### Goal
-- Extend Docker Compose with RabbitMQ
-- Integrate queue publishing into REST API
-- Uploading a document triggers a message to RabbitMQ
-- Empty OCR worker consumes the queue and logs the message
-- Exception handling and logging added
-
-### Services in Sprint 3
-- PostgreSQL
-- API
-- UI
-- RabbitMQ
-- OCR worker
-
-### Start Sprint 3 stack
-```bash
-cd /home/roberto/Downloads/SWEN_3/DMS
-docker compose up -d --build
-```
-
-### Confirm queue flow
-1. Open the frontend at http://localhost/
-2. Upload a PDF document
-3. Check logs:
-
-```bash
-docker compose logs -f worker
-```
-
-Expected output example:
 ```text
-[worker] OCR message received: {"documentId":"...","fileName":"...pdf","eventType":"document.uploaded"}
+Browser ── Nginx ── Paperless API ── PostgreSQL
+                         │
+                         ├── Silo object storage
+                         ├── RabbitMQ ── OCR worker ── Elasticsearch
+                         │                    └──────── GenAI worker
+                         └── Elasticsearch search
 ```
 
-This confirms:
-- upload succeeded in the frontend/API
-- API published message to RabbitMQ
-- worker consumed the message from the queue
+The OCR worker downloads uploaded files from Silo. It renders PDF pages with Ghostscript and recognizes English and German text with Tesseract. OCR results are sent to the indexer and saved with the document record. Edited copies use the same processing flow so their current text can be searched.
 
-### RabbitMQ access
-- RabbitMQ UI: http://localhost:15672
-- Username: `guest`
-- Password: `guest`
+## Services
 
-### Worker queue name
-- `document-uploaded`
+| Service | Purpose | Local address |
+| --- | --- | --- |
+| `ui` | Static frontend served by Nginx; proxies API requests | <http://localhost/> |
+| `api` | ASP.NET Core REST API | <http://localhost:8080/> |
+| `postgres` | Document metadata and relationships | `localhost:5432` |
+| `silo` | S3-compatible file storage | <http://localhost:9000/> |
+| `rabbitmq` | Background processing queues | <http://localhost:15672/> |
+| `worker` | PDF/image OCR | Internal service |
+| `indexer` | Writes OCR results to Elasticsearch | Internal service |
+| `elasticsearch` | Full-text search index | <http://localhost:9200/> |
+| `genai-worker` | Generates summaries using the configured provider | Internal service |
+| `kibana` | Elasticsearch inspection | <http://localhost:5601/> |
+| `logstash` | Receives application logs | `localhost:5044` |
 
----
+## Run locally
 
-## Sprint 4 – Silo, OCR, Elasticsearch
+### Requirements
 
-### Processing flow
-- PDF uploads are stored in the Silo object store through its S3-compatible API.
-- RabbitMQ's `document-uploaded` queue carries the document ID and Silo object key.
-- The OCR worker downloads each PDF, renders every page with Ghostscript, and recognizes German/English text with Tesseract.
-- OCR results are published to `document-ocr-completed` and written idempotently to Elasticsearch.
-- `GET /api/documents/search?q=Hello` searches file names, descriptions, and recognized text.
-- The home page at http://localhost/ and the Documents page use that search endpoint.
+- Docker and Docker Compose
+- .NET 8 SDK for local builds
 
-### Services and local URLs
-- Paperless UI: http://localhost/
-- API Swagger: http://localhost:8080/swagger
-- Silo S3 API: http://localhost:9000
-- Silo console: http://localhost:9001 (user `paperless`, password `paperless-secret-key`)
-- RabbitMQ management: http://localhost:15672 (user/password `guest`)
-- Elasticsearch: http://localhost:9200
-- Kibana: http://localhost:5601
-- Logstash TCP input: localhost:5044
+### Start the application
 
-### Start and check the full stack
-```bash
-docker compose build
-docker compose up -d
-docker compose ps
-```
+From the repository root:
 
-Upload `HelloWorld.pdf` through the Upload page at http://localhost/. Wait for the worker and indexer to finish, then search for `Hello` in the home-page search field. The PDF should appear in the results. Processing can be followed with:
-
-```bash
-docker compose logs -f worker indexer
-```
-
-The OCR worker requires a PDF with a readable scan or existing text layer. Search results are available after the indexing worker processes the OCR event.
-
-### Storage and cloud requirements
-This project uses the `pgsty/silo` container image, not the removed MinIO image. Silo exposes a local S3-compatible endpoint; the MinIO-compatible NuGet client is only used as an S3 protocol client. All credentials and data are local to Docker Compose. No AWS account, AWS SDK, or AWS service is used.
-
-### Data persistence
-PostgreSQL, Silo, and Elasticsearch data are stored in named Docker volumes. To remove the data as well as containers, run `docker compose down -v`.
-
----
-
-## Project run commands
-
-### Build and test
-```bash
-dotnet restore Paperless.sln
-dotnet build Paperless.sln -nologo
-dotnet test Paperless.sln -nologo
-```
-
-### Docker lifecycle
 ```bash
 docker compose up -d --build
 docker compose ps
-docker compose logs -f
+```
+
+Open <http://localhost/> to upload and manage documents. The API health check is available at <http://localhost/api/health>; Swagger is available at <http://localhost:8080/swagger>.
+
+Upload a PDF or image and wait for OCR and indexing to finish. Search by filename, description, or recognized text. Follow background processing with:
+
+```bash
+docker compose logs -f worker indexer genai-worker
+```
+
+To stop the services while preserving data:
+
+```bash
 docker compose down
 ```
 
-### Check PostgreSQL data
+PostgreSQL, Silo, and Elasticsearch data use named Docker volumes. `docker compose down -v` also deletes those volumes and their data.
+
+### Build and run the .NET projects locally
+
 ```bash
-docker compose exec postgres psql -U paperless -d paperless -c "select * from \"Documents\";"
+dotnet restore Paperless.sln
+dotnet build Paperless.sln
+dotnet test Paperless.sln
 ```
 
----
+The OCR worker requires Ghostscript and Tesseract at runtime; Docker installs them in its image.
 
-## Git commands
+## Document editing and storage
 
-Check status:
-```bash
-git status
+Editing creates a new document record and a new stored file. It does not replace the uploaded original. In Docker, files are stored in the `paperless-documents` bucket in Silo. Browser-created copies use a `kopie_XX_` filename under the original document's storage directory. The new file is sent through OCR before it appears in text search.
+
+The PDF editor uses PDF.js to render pages, Tesseract.js for scanned pages, and PDF-Lib to create the edited PDF. The image editor highlights OCR text regions and saves a reconstructed image copy.
+
+## AI summaries
+
+Open **AI Settings** from the frontend to configure one provider:
+
+- Google Gemini
+- A local or remote OpenAI-compatible endpoint, such as Ollama
+
+Summary regeneration also supports structured overview, short summary, key points, and timeline formats, with optional user instructions. Generated Markdown is escaped and formatted by the frontend before display.
+
+## API endpoints
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/documents` | List documents |
+| `GET` | `/api/documents/{id}` | Read document metadata |
+| `GET` | `/api/documents/{id}/file` | Open the stored file |
+| `GET` | `/api/documents/search?q={query}` | Search indexed text and metadata |
+| `POST` | `/api/documents/upload` | Upload a document and start OCR |
+| `PUT` | `/api/documents/{id}` | Update document metadata |
+| `DELETE` | `/api/documents/{id}` | Delete a document and its stored file |
+| `POST` | `/api/documents/{id}/edit/pdf/upload` | Save a browser-edited PDF copy |
+| `POST` | `/api/documents/{id}/edit/image` | Save an edited image copy |
+| `GET`, `PUT` | `/api/genai/settings` | Read or update AI providers |
+| `POST` | `/api/documents/{id}/summary/regenerate` | Queue a new summary |
+| `GET`, `POST` | `/api/collections` | List or create collections |
+
+## Repository layout
+
+```text
+frontend/                 Static pages, styles, and browser-side editors
+src/Paperless.Api/        REST API, persistence, storage, search, and queues
+src/Paperless.Worker/     OCR processing worker
+src/Paperless.Indexer/    Elasticsearch indexing worker
+src/Paperless.GenAI/      Summary generation worker
+tests/                    API service tests
+docker-compose.yml        Local application and infrastructure services
 ```
 
-Stage all changes:
-```bash
-git add .
-```
+## Local development credentials
 
-Commit:
-```bash
-git commit -m "Sprint 3: RabbitMQ queue integration and worker"
-```
+The Compose file uses development-only defaults:
 
-Push:
-```bash
-git push
-```
-
-If the branch is new:
-```bash
-git push --set-upstream origin <branch-name>
-```
-
----
-
-## Requirements
-- Docker
-- Docker Compose
-- .NET SDK 10.0.100 for local builds (`global.json`); the applications target .NET 8
-
-## Credentials
 - PostgreSQL: `paperless` / `paperless`
 - RabbitMQ: `guest` / `guest`
-- Silo: `paperless` / `paperless-secret-key` (local development only)
+- Silo: `paperless` / `paperless-secret-key`
 
-## Final sprint validation
-Successful Sprint 4 validation is:
-- app builds without errors
-- `docker compose build` completes without errors
-- `docker compose up -d` starts all required containers
-- frontend is reachable via http://localhost/
-- API is reachable and health checks pass
-- PDF uploads are stored in Silo
-- OCR and indexing workers complete their queue messages
-- searching for `Hello` after uploading `HelloWorld.pdf` returns that document
+Do not reuse these credentials outside a local development environment. No AWS account or AWS service is required; Silo provides the S3-compatible storage endpoint locally.

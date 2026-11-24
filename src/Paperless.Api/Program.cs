@@ -5,6 +5,12 @@ using Paperless.Api.Repositories;
 using Paperless.Api.Services;
 using Paperless.Api.Storage;
 
+// ############################
+// API host startup and service composition
+// ############################
+// ############################
+// Register the API's web pipeline, persistence, storage, messaging, and search.
+// ############################
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -38,6 +44,9 @@ Directory.CreateDirectory(uploadsFolder);
 
 builder.Services.AddSingleton(new DocumentStorageOptions(uploadsFolder));
 
+// ############################
+// Configure middleware, routes, and the initial database schema checks.
+// ############################
 var app = builder.Build();
 
 app.UseCors("AllowFrontend");
@@ -57,6 +66,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PaperlessDbContext>();
     await db.Database.EnsureCreatedAsync();
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Documents\" ADD COLUMN IF NOT EXISTS \"Summary\" text NULL;");
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Documents\" ADD COLUMN IF NOT EXISTS \"OcrText\" text NULL;");
 }
 
 app.Run();

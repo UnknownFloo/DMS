@@ -4,13 +4,18 @@ using Paperless.Api.Services;
 
 namespace Paperless.Api.Controllers;
 
+//: ======================================================================
+//: HTTP boundary for creating collections and managing document membership.
+//: ======================================================================
 [ApiController]
 [Route("api/collections")]
 public class CollectionsController(CollectionService service) : ControllerBase
 {
+    //* Lists all collections.
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<CollectionResponse>>> GetAll(CancellationToken ct) => Ok(await service.GetAllAsync(ct));
 
+    //* Creates a collection and converts validation failures into a problem response.
     [HttpPost]
     public async Task<ActionResult<CollectionResponse>> Create(CreateCollectionRequest request, CancellationToken ct)
     {
@@ -18,6 +23,7 @@ public class CollectionsController(CollectionService service) : ControllerBase
         catch (ArgumentException ex) { return ValidationProblem(ex.Message); }
     }
 
+    //* Returns a collection or responds with not found.
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<CollectionResponse>> Get(Guid id, CancellationToken ct)
     {
@@ -25,17 +31,21 @@ public class CollectionsController(CollectionService service) : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    //* Adds a document to a collection.
     [HttpPost("{id:guid}/documents")]
     public async Task<IActionResult> AddDocument(Guid id, AddDocumentToCollectionRequest request, CancellationToken ct) =>
         await service.AddDocumentAsync(id, request.DocumentId, ct) ? NoContent() : NotFound();
 
+    //* Lists documents associated with a collection.
     [HttpGet("{id:guid}/documents")]
     public async Task<ActionResult<IReadOnlyList<DocumentResponse>>> GetDocuments(Guid id, CancellationToken ct) => Ok(await service.GetDocumentsAsync(id, ct));
 
+    //* Deletes a collection.
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct) =>
         await service.DeleteAsync(id, ct) ? NoContent() : NotFound();
 
+    //* Removes a document from a collection.
     [HttpDelete("{id:guid}/documents/{documentId:guid}")]
     public async Task<IActionResult> RemoveDocument(Guid id, Guid documentId, CancellationToken ct) =>
         await service.RemoveDocumentAsync(id, documentId, ct) ? NoContent() : NotFound();

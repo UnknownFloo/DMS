@@ -10,8 +10,14 @@ using System.IO;
 
 namespace Paperless.Api.Tests;
 
+// ############################
+// Covers document creation, retrieval, updates, uploads, storage, and queue events.
+// ############################
 public class DocumentServiceTests
 {
+    // ############################
+    // Core create, read, update, delete, and upload behavior
+    // ############################
     [Fact]
     public async Task CreateAsync_CreatesDocument_WithoutProductionDatabase()
     {
@@ -163,6 +169,11 @@ public class DocumentServiceTests
         Directory.Delete(root, recursive: true);
     }
 
+    // ############################
+
+    // Input validation and metadata normalization
+
+    // ############################
     [Fact]
     public async Task CreateAsync_RejectsMissingFileName()
     {
@@ -218,6 +229,11 @@ public class DocumentServiceTests
         publisher.Verify(x => x.PublishDocumentUploaded(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
+    // ############################
+
+    // Existing record lookup and update edge cases
+
+    // ############################
     [Fact]
     public async Task GetAsync_ReturnsDocument_WhenExists()
     {
@@ -312,6 +328,11 @@ public class DocumentServiceTests
         Assert.NotNull(document.UpdatedAtUtc);
     }
 
+    // ############################
+
+    // Delete and upload failure handling
+
+    // ############################
     [Fact]
     public async Task DeleteAsync_ReturnsFalse_WhenDocumentMissing()
     {

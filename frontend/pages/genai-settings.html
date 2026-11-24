@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3d7347">
+    <title>AI Settings - Paperless</title>
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
+<!-- ############################
+     Shared navigation and workspace actions.
+     ############################ -->
+<header class="workspace-header">
+    <div class="container shell-bar">
+        <div class="brand-cluster"><div class="brand-mark">P</div><div class="brand-copy"><span class="eyebrow">workspace</span><strong>Paperless</strong></div></div>
+        <nav class="nav-pills" aria-label="Main navigation">
+            <a href="../index.html">Overview</a><a href="upload.html">Upload</a><a href="documents.html">Documents</a><a href="collections.html">Collections</a><a href="genai-settings.html" class="active">AI Settings</a>
+        </nav>
+        <div class="top-actions"><span class="status-pill"><span class="status-dot"></span>Ready</span></div>
+    </div>
+</header>
+<!-- ############################
+     Configure provider credentials, models, prompts, and activation.
+     ############################ -->
+<main><div class="container">
+    <section class="form-container genai-settings-page">
+        <div class="settings-heading">
+            <span class="eyebrow">Generative AI</span>
+            <h1>Summary providers</h1>
+            <p>Configure providers once, then enable exactly one with a switch.</p>
+        </div>
+
+        <form id="genAiForm">
+            <div class="provider-toolbar">
+                <button class="btn btn-secondary btn-small" id="addProviderBtn" type="button">＋ Add provider</button>
+            </div>
+            <div class="provider-grid" id="providerGrid">
+                <article class="provider-card" data-provider-card="gemini">
+                    <div class="provider-card-header">
+                        <div class="provider-icon gemini-icon">✦</div>
+                        <div><h2>Google Gemini</h2><p>Cloud API provider</p></div>
+                        <label class="switch" title="Enable Google Gemini">
+                            <input id="geminiEnabled" type="checkbox" data-provider-toggle="gemini">
+                            <span class="switch-track"></span>
+                        </label>
+                    </div>
+                    <div class="form-group"><label for="geminiApiKey">API key</label><input id="geminiApiKey" type="password" autocomplete="off" placeholder="Enter your Gemini API key"><small id="geminiKeyStatus" class="field-status"></small></div>
+                    <div class="form-group"><label for="geminiModel">Model</label><input id="geminiModel" value="gemini-2.5-flash" placeholder="gemini-2.5-flash"></div>
+                    <div class="form-group"><label for="geminiBaseUrl">API base URL</label><input id="geminiBaseUrl" type="url" value="https://generativelanguage.googleapis.com" placeholder="https://generativelanguage.googleapis.com"></div>
+                </article>
+
+                <article class="provider-card" data-provider-card="local">
+                    <div class="provider-card-header">
+                        <div class="provider-icon local-icon">⌘</div>
+                        <div><h2>Local model</h2><p>Ollama or OpenAI-compatible server</p></div>
+                        <label class="switch" title="Enable local model">
+                            <input id="localEnabled" type="checkbox" data-provider-toggle="local">
+                            <span class="switch-track"></span>
+                        </label>
+                    </div>
+                    <div class="form-group"><label for="localBaseUrl">Server URL</label><input id="localBaseUrl" type="url" placeholder="http://host.docker.internal:11434/v1"></div>
+                    <div class="form-group"><label for="localModel">Model</label><input id="localModel" value="llama3.1" placeholder="llama3.1"></div>
+                    <div class="form-group"><label for="localApiKey">Optional API key</label><input id="localApiKey" type="password" autocomplete="off" placeholder="Leave empty for Ollama"><small id="localKeyStatus" class="field-status"></small></div>
+                </article>
+            </div>
+
+            <div class="form-group prompt-group"><label for="prompt">Summary prompt</label><textarea id="prompt" rows="5"></textarea></div>
+            <div class="form-actions"><button class="btn btn-secondary" id="resetPromptBtn" type="button">Reset prompt</button><button class="btn btn-primary" type="submit">Save providers</button></div>
+        </form>
+        <div id="settingsStatus" aria-live="polite" style="margin-top:1rem"></div>
+    </section>
+</div></main>
+<!-- ############################
+     Shared API access must load before provider settings behavior.
+     ############################ -->
+<script src="../js/api-client.js?v=20261122"></script>
+<script src="../js/genai-settings.js?v=20261122"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('../service-worker.js').catch(()=>{});</script>
+</body>
+</html>

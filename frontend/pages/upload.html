@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="../css/upload.css">
 </head>
 <body>
+    <!-- ############################
+     Shared navigation and workspace actions.
+     ############################ -->
     <header class="workspace-header">
         <div class="container shell-bar">
             <div class="brand-cluster">
@@ -23,6 +26,7 @@
                 <a href="upload.html" class="active">Upload</a>
                 <a href="documents.html">Documents</a>
                 <a href="collections.html">Collections</a>
+                <a href="ai-settings.html">AI Settings</a>
             </nav>
 
             <div class="top-actions">
@@ -32,6 +36,9 @@
         </div>
     </header>
 
+    <!-- ############################
+     File picker, drag-and-drop target, and upload details.
+     ############################ -->
     <main>
         <div class="container">
             <div class="page-header">
@@ -67,6 +74,9 @@
         </div>
     </main>
 
+    <!-- ############################
+     Load shared API access before the upload page controller.
+     ############################ -->
     <script src="../js/api-client.js"></script>
     <script src="../js/upload.js"></script>
 </body>

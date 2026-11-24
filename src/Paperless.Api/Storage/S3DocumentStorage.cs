@@ -3,6 +3,9 @@ using Minio.DataModel.Args;
 
 namespace Paperless.Api.Storage;
 
+// ############################
+// Stores document objects in an S3-compatible bucket such as MinIO.
+// ############################
 public sealed class S3DocumentStorage : IDocumentStorage
 {
     private readonly IMinioClient _client;
@@ -48,6 +51,7 @@ public sealed class S3DocumentStorage : IDocumentStorage
     public Task DeleteAsync(string key, CancellationToken cancellationToken) =>
         _client.RemoveObjectAsync(new RemoveObjectArgs().WithBucket(_bucket).WithObject(key), cancellationToken);
 
+    // Serialize bucket creation so concurrent first uploads do not race.
     private async Task EnsureBucketAsync(CancellationToken cancellationToken)
     {
         await _bucketLock.WaitAsync(cancellationToken);

@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="../css/document.css">
 </head>
 <body>
+    <!--: ======================================================== -->
+    <!--: Shared navigation and workspace actions.                 -->
+    <!--: ======================================================== -->
     <header class="workspace-header">
         <div class="container shell-bar">
             <div class="brand-cluster">
@@ -33,13 +36,18 @@
         </div>
     </header>
 
-    <main>
+    <!--: ======================================================== -->
+    <!--: Document details are inserted after the API response is loaded. -->
+    <!--: ======================================================== -->
+     <main>
         <div class="container">
             <div id="documentDetail" class="loading"></div>
         </div>
     </main>
 
-    <!-- Delete Confirmation Modal -->
+    <!--: ======================================================== -->
+    <!--: Confirmation dialog for permanent document deletion.       -->
+    <!--: ======================================================== -->
     <div id="deleteDocModal" class="modal-overlay" aria-hidden="true">
         <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteDocTitle">
             <div class="collection-modal-header">
@@ -65,6 +73,71 @@
         </div>
     </div>
 
+    <!--: ======================================================== -->
+    <!--: Edit dialog for document metadata.                       -->
+    <!--: ======================================================== -->
+    <div id="descriptionModal" class="modal-overlay" aria-hidden="true">
+        <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="descriptionModalTitle">
+            <div class="collection-modal-header">
+                <div><span class="eyebrow">Document metadata</span><h2 id="descriptionModalTitle">Edit description</h2></div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeDescriptionModal()">Close</button>
+            </div>
+            <div class="form-group" style="margin-top:1rem"><label for="descriptionInput">Description</label><textarea id="descriptionInput" rows="5" placeholder="Add a short description"></textarea></div>
+            <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="closeDescriptionModal()">Cancel</button><button type="button" class="btn btn-primary" onclick="saveDescription()">Save description</button></div>
+        </div>
+    </div>
+
+    <!--: ======================================================== -->
+    <!--: Entry point for creating an edited PDF or image copy.    -->
+    <!--: ======================================================== -->
+    <div id="fileEditModal" class="modal-overlay" aria-hidden="true">
+        <div class="collection-modal-card file-edit-modal-card" role="dialog" aria-modal="true" aria-labelledby="fileEditTitle">
+            <div class="collection-modal-header">
+                <div><span class="eyebrow">Create edited copy</span><h2 id="fileEditTitle">Edit document file</h2></div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeFileEditModal()">Close</button>
+            </div>
+            <div id="pdfEditControls" class="form-group" style="display:none;margin-top:1rem">
+                <label for="editedPdfName">New PDF name</label><input id="editedPdfName" type="text">
+                <label for="editedPdfText" style="margin-top:.8rem">PDF text content</label><textarea id="editedPdfText" rows="15"></textarea>
+            </div>
+            <div id="imageEditControls" style="display:none;margin-top:1rem">
+                <label for="editedImageName">New image name</label><input id="editedImageName" type="text" style="width:100%;margin-bottom:.8rem">
+                <div class="image-edit-stage"><canvas id="imageEditCanvas"></canvas></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="addImageTextOverlay()">Add text box</button></div>
+                <div id="imageOverlayInputs"></div>
+            </div>
+            <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="closeFileEditModal()">Cancel</button><button type="button" class="btn btn-primary" onclick="saveEditedFile()">Create edited file</button></div>
+        </div>
+    </div>
+
+    <!--: =========================================================== -->
+    <!--: Format and custom instructions for AI summary regeneration. -->
+    <!--: =========================================================== -->
+     <div id="summaryModal" class="modal-overlay" aria-hidden="true">
+        <div class="collection-modal-card" role="dialog" aria-modal="true" aria-labelledby="summaryModalTitle">
+            <div class="collection-modal-header">
+                <div><span class="eyebrow">Regenerate summary</span><h2 id="summaryModalTitle">Change the AI prompt</h2></div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeSummaryModal()">Close</button>
+            </div>
+            <div class="form-group summary-options" style="margin-top:1rem">
+                <label for="summaryFormat">Output format</label>
+                <select id="summaryFormat">
+                    <option value="structured">Structured overview</option>
+                    <option value="concise">Short summary</option>
+                    <option value="bullets">Key points</option>
+                    <option value="timeline">Timeline</option>
+                </select>
+                <label for="summaryPrompt">Additional instructions (optional)</label>
+                <textarea id="summaryPrompt" rows="5" placeholder="For example: focus on costs, deadlines, and responsibilities."></textarea>
+                <small>The summary is formatted safely in the page from the AI's Markdown response.</small>
+            </div>
+            <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="closeSummaryModal()">Cancel</button><button type="button" class="btn btn-primary" onclick="submitSummaryRegeneration()">Generate summary</button></div>
+        </div>
+    </div>
+
+    <!--: ============================================================= -->
+    <!--: Load shared API access before the document detail controller. -->
+    <!--: ============================================================= -->
     <script src="../js/api-client.js"></script>
     <script src="../js/document-detail.js"></script>
 </body>

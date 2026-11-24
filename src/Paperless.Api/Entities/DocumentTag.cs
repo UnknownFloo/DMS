@@ -1,5 +1,9 @@
 namespace Paperless.Api.Entities;
 
+//: ======================================================================
+//: Join entity linking documents to tags.
+//: ======================================================================
+
 public class DocumentTag
 {
     public Guid DocumentId { get; set; }

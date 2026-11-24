@@ -1,5 +1,8 @@
 namespace Paperless.Api.Entities;
 
+//: ======================================================================
+//: Join entity linking collections to their documents.
+//: ======================================================================
 public class CollectionDocument
 {
     public Guid CollectionId { get; set; }

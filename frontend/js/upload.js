@@ -1,10 +1,13 @@
-// Upload page
+// ############################
+// File selection, upload submission, and status messages.
+// ############################
 document.addEventListener('DOMContentLoaded', () => {
     setupUploadArea();
 });
 
 let selectedFile = null;
 
+// Connect the drop area, file picker, and form to the same selection flow.
 function setupUploadArea() {
     const area = document.getElementById('uploadArea');
     const input = document.getElementById('fileInput');
@@ -38,6 +41,7 @@ function setupUploadArea() {
     form.addEventListener('submit', handleUpload);
 }
 
+// Store the selected file and show its name and size before submission.
 function handleFileSelect(file) {
     selectedFile = file;
     const list = document.getElementById('fileList');
@@ -49,6 +53,7 @@ function handleFileSelect(file) {
     `;
 }
 
+// Submit the selected file and description through the shared API client.
 async function handleUpload(e) {
     e.preventDefault();
 
